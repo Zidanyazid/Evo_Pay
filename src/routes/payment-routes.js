@@ -11,21 +11,17 @@ export default function paymentRoutes(service) {
   const merchantLimit = rateLimit({ limit: config.rateLimit });
   const methods = new PaymentMethodService();
   router.use(merchantAuth, merchantLimit);
-  router.get('/payment-methods', (req,res)=>res.json({ data:methods.list(req.merchant.id) }));
+  router.get('/payment-methods', async (req, res, next) => { try { res.json({ data: await methods.list(req.merchant.id) }); } catch (error) { next(error); } });
   router.post('/payments', idempotency, async (req, res, next) => {
     const { order_id, amount, payment_method } = req.body || {};
     if (!order_id || !validAmount(amount) || !payment_method) return res.status(422).json({ error: { code: 'VALIDATION_ERROR', message: 'order_id, amount bilangan bulat positif, dan payment_method wajib valid.' } });
     try { const result = await service.create(req.merchant, req.body); res.status(result.duplicate ? 200 : 201).json({ data: publicPayment(result.payment), duplicate: result.duplicate }); } catch (error) { next(error); }
   });
-  router.get('/payments/:paymentId', (req, res) => {
-    const payment = service.findForMerchant(req.merchant.id, req.params.paymentId);
-    if (!payment) return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Pembayaran tidak ditemukan.' } });
-    res.json({ data: publicPayment(payment) });
+  router.get('/payments/:paymentId', async (req, res, next) => {
+    try { const payment = await service.findForMerchant(req.merchant.id, req.params.paymentId); if (!payment) return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Pembayaran tidak ditemukan.' } }); res.json({ data: publicPayment(payment) }); } catch (error) { next(error); }
   });
   router.post('/payments/:paymentId/sync', async (req, res, next) => {
-    const payment = service.findForMerchant(req.merchant.id, req.params.paymentId);
-    if (!payment) return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Pembayaran tidak ditemukan.' } });
-    try { res.json({ data: publicPayment(await service.sync(payment)) }); } catch (error) { next(error); }
+    try { const payment = await service.findForMerchant(req.merchant.id, req.params.paymentId); if (!payment) return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Pembayaran tidak ditemukan.' } }); res.json({ data: publicPayment(await service.sync(payment)) }); } catch (error) { next(error); }
   });
   return router;
 }

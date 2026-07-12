@@ -4,7 +4,6 @@ function sanitize(value) {
   if (!value || typeof value !== 'object') return value;
   return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, hidden.has(key.toLowerCase()) ? '[REDACTED]' : (typeof item === 'object' ? sanitize(item) : item)]));
 }
-export function audit(action, { actorId = null, targetType = null, targetId = null, ip = null, userAgent = null, metadata = null } = {}) {
-  db.prepare('INSERT INTO audit_logs (id,actor_id,action,target_type,target_id,ip,user_agent,metadata_json,created_at) VALUES (?,?,?,?,?,?,?,?,?)')
-    .run(id('aud'), actorId, action, targetType, targetId, ip, userAgent, metadata ? JSON.stringify(sanitize(metadata)) : null, now());
+export async function audit(action, { actorId = null, targetType = null, targetId = null, ip = null, userAgent = null, metadata = null } = {}) {
+  await db.run('INSERT INTO audit_logs (id,actor_id,action,target_type,target_id,ip,user_agent,metadata_json,created_at) VALUES (?,?,?,?,?,?,?,?,?)', [id('aud'), actorId, action, targetType, targetId, ip, userAgent, metadata ? JSON.stringify(sanitize(metadata)) : null, now()]);
 }
