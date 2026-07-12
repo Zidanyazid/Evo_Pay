@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NexusPay — Dashboard Merchant</title>
+  <meta name="description" content="Dashboard merchant NexusPay untuk memantau saldo, transaksi, dan integrasi pembayaran.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main id="app">
+    <section class="login-shell" id="login">
+      <div class="landing-hero">
+        <nav class="landing-nav">
+          <div class="landing-brand"><span class="logo-mark">N</span><strong>NexusPay</strong></div>
+          <div class="landing-nav-links">
+            <a href="#features">Fitur</a>
+            <a href="/docs.html">Dokumentasi</a>
+          </div>
+          <button class="landing-cta-small" onclick="document.getElementById('login-card-anchor').scrollIntoView({behavior:'smooth'})">Masuk Dashboard →</button>
+        </nav>
+
+        <div class="hero-content">
+          <div class="hero-badge">🚀 Payment Gateway Terpercaya</div>
+          <h1>Kelola Pembayaran<br><span class="gradient-text">Lebih Cerdas.</span></h1>
+          <p class="hero-desc">Platform payment gateway self-hosted dengan integrasi Tokopay. Pantau transaksi, kelola merchant, dan terima pembayaran dari berbagai channel dalam satu dashboard.</p>
+          <div class="hero-actions">
+            <button class="hero-btn primary" onclick="document.getElementById('login-card-anchor').scrollIntoView({behavior:'smooth'})">Masuk ke Dashboard <span>→</span></button>
+            <a href="/docs.html" class="hero-btn outline">Baca Dokumentasi</a>
+          </div>
+        </div>
+
+        <div class="hero-visual">
+          <div class="hero-glow"></div>
+          <div class="hero-card-stack">
+            <div class="hero-stat-card">
+              <span>Total Volume</span>
+              <strong>Rp 124.5 M</strong>
+              <small>↗ +12.4% dari bulan lalu</small>
+            </div>
+            <div class="hero-stat-card accent">
+              <span>Success Rate</span>
+              <strong>99.2%</strong>
+              <small>Uptime 99.99%</small>
+            </div>
+            <div class="hero-stat-card lav">
+              <span>Metode Pembayaran</span>
+              <strong>26 Channel</strong>
+              <small>VA, E-Money, QRIS, Retail</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="landing-features" id="features">
+        <div class="features-header">
+          <p class="kicker">KENAPA NEXUSPAY?</p>
+          <h2>Fitur yang Membuat Pembayaran Mudah</h2>
+        </div>
+        <div class="features-grid">
+          <div class="feature-card">
+            <div class="feature-icon">⚡</div>
+            <h3>Multi-Channel</h3>
+            <p>26 metode pembayaran terintegrasi — Virtual Account, E-Money, QRIS, dan gerai retail.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">🔒</div>
+            <h3>Keamanan Enterprise</h3>
+            <p>IP whitelist, RBAC, CSRF protection, SSRF guard, dan enkripsi end-to-end.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <h3>Dashboard Real-time</h3>
+            <p>Pantau transaksi, saldo, webhook, dan analytics dalam satu dashboard yang powerful.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">🔄</div>
+            <h3>Webhook Reliable</h3>
+            <p>Notifikasi otomatis dengan retry, dead-letter queue, dan monitoring pengiriman.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">💰</div>
+            <h3>Settlement & Refund</h3>
+            <p>Approval workflow, rekonsiliasi otomatis, dan refund management yang lengkap.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <h3>Self-Hosted</h3>
+            <p>Deploy di infrastruktur sendiri. Data Anda tetap di server Anda — privasi terjaga.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="landing-stats">
+        <div class="stat-item"><strong>99.99%</strong><span>Uptime</span></div>
+        <div class="stat-divider"></div>
+        <div class="stat-item"><strong>26+</strong><span>Payment Channel</span></div>
+        <div class="stat-divider"></div>
+        <div class="stat-item"><strong>&lt;200ms</strong><span>API Response</span></div>
+        <div class="stat-divider"></div>
+        <div class="stat-item"><strong>24/7</strong><span>Monitoring</span></div>
+      </div>
+
+      <div class="login-section" id="login-card-anchor">
+        <div class="login-visual">
+          <div class="login-brand"><span class="logo-mark">N</span><span>NexusPay</span></div>
+          <div>
+            <p class="kicker">MERCHANT PAYMENT HUB</p>
+            <h2>Semua pembayaran,<br>lebih terkendali.</h2>
+            <p>Pantau transaksi, saldo, dan semua situs Anda dalam satu dashboard yang aman.</p>
+          </div>
+          <div class="login-proof"><span>✓</span> Protected merchant workspace</div>
+        </div>
+        <div class="login-card">
+          <p class="kicker">SELAMAT DATANG</p>
+          <h2>Masuk ke dashboard</h2>
+          <p>Gunakan username dan password admin Anda.</p>
+          <form id="login-form">
+            <label for="username">Username</label>
+            <div class="field-wrap"><span>👤</span><input id="username" type="text" autocomplete="username" required placeholder="Masukkan username"></div>
+            <label for="password">Password</label>
+            <div class="field-wrap"><span>🔑</span><input id="password" type="password" autocomplete="current-password" required placeholder="Masukkan password"></div>
+            <button id="login-button">Masuk ke dashboard <span>→</span></button>
+            <small id="login-error" role="alert"></small>
+          </form>
+        </div>
+      </div>
+
+      <footer class="landing-footer">
+        <div class="footer-brand"><span class="logo-mark">N</span><strong>NexusPay</strong></div>
+        <p>Self-hosted multi-merchant payment gateway.</p>
+        <div class="footer-links">
+          <a href="/docs.html">Dokumentasi</a>
+          <a href="/docs.html#authentication">API Reference</a>
+        </div>
+        <small>© 2026 NexusPay. All rights reserved.</small>
+      </footer>
+    </section>
+    <section id="dashboard" hidden>
+      <aside id="sidebar">
+        <div class="sidebar-brand"><span class="logo-mark">N</span><strong>NexusPay</strong><button id="sidebar-toggle" aria-label="Ciutkan sidebar">‹</button></div>
+        <nav aria-label="Navigasi utama"><button class="nav active" data-view="overview"><span class="nav-icon">⌂</span><span>Dashboard</span></button><button class="nav" data-view="payments"><span class="nav-icon">▣</span><span>Transaksi</span></button><button class="nav" data-view="methods"><span class="nav-icon">◈</span><span>Metode Pembayaran</span></button><button class="nav" data-view="webhooks"><span class="nav-icon">↯</span><span>Webhooks</span></button><button class="nav" data-view="finance"><span class="nav-icon">◫</span><span>Finance</span></button><button class="nav" data-view="analytics"><span class="nav-icon">↗</span><span>Analytics</span></button><button class="nav" data-view="merchants"><span class="nav-icon">◇</span><span>Merchant</span></button><button class="nav" data-view="ip-whitelist"><span class="nav-icon">♢</span><span>Whitelist IP</span></button><button class="nav" data-view="audit"><span class="nav-icon">◎</span><span>Audit Log</span></button><a class="nav" href="/docs.html"><span class="nav-icon">⌘</span><span>API Playground</span></a></nav>
+        <div class="side-label">WORKSPACE</div><div class="side-link"><span class="nav-icon">◉</span><span>Gateway aktif</span><i></i></div>
+        <div class="sidebar-profile"><span class="avatar">NP</span><div><b>NexusPay Store</b><small>Merchant workspace</small></div><button id="logout" aria-label="Keluar">↗</button></div>
+      </aside>
+      <div class="workspace">
+        <header class="topbar"><div><h1 id="view-title">Dashboard</h1><p id="view-subtitle">Selamat datang kembali di NexusPay.</p></div><div class="top-actions"><span class="system-pill"><i></i> Sistem normal</span><button class="avatar-button" aria-label="Profil">NP</button></div></header>
+        <section id="overview-view" class="view">
+          <div class="info-banner"><span>▤</span><p>Dengan menggunakan layanan NexusPay, Anda menyetujui <a href="/docs.html">syarat layanan dan dokumentasi integrasi</a>.</p><b>→</b></div>
+          <div class="balance-grid" id="balance-cards"></div>
+          <div class="dashboard-grid"><div class="period-grid" id="period-cards"></div><section class="news-card"><div class="section-title"><h2>News & Updates</h2><span>Terbaru</span></div><article><b>Settlement berjalan normal</b><p>Seluruh layanan pembayaran dan webhook beroperasi dengan baik.</p><time>Hari ini</time></article><article><b>Integrasi API NexusPay</b><p>Pelajari alur checkout dan sinkronisasi status terbaru.</p><time>Dokumentasi</time></article><article><b>Keamanan akun merchant</b><p>Rotasi API key secara berkala untuk menjaga integrasi Anda.</p><time>Rekomendasi</time></article></section></div>
+          <section class="chart-panel"><div class="chart-head"><div><span class="chart-icon">↗</span><h2>Statistik Transaksi</h2></div><div class="date-range"><span>□</span><input id="chart-from" type="date" aria-label="Tanggal mulai"><span>—</span><input id="chart-to" type="date" aria-label="Tanggal akhir"><button id="apply-range" aria-label="Terapkan rentang">→</button></div></div><div class="chart-meta"><div><strong id="chart-total">Rp0</strong><span>Total nominal periode</span></div><div class="chart-legend"><span><i class="dot blue"></i>Total Transaksi</span><span><i class="dot amber"></i>Total Nominal</span></div></div><div id="transaction-chart" class="chart-area" aria-label="Grafik statistik transaksi"></div></section>
+          <section class="panel recent-panel"><div class="panel-head"><div><p class="kicker">TRANSAKSI TERBARU</p><h2>Aktivitas pembayaran</h2></div><button class="quiet" data-view="payments">Lihat semua <span>→</span></button></div><div id="recent-payments"></div></section>
+        </section>
+        <section id="payments-view" class="view" hidden><div class="panel"><div class="panel-head"><div><p class="kicker">TRANSACTION LEDGER</p><h2>Semua transaksi</h2></div><button class="export-button" id="export-payments">↓ Export CSV</button></div><form class="payment-filters" id="payment-filters"><label>Cari<input id="payment-search" name="search" placeholder="Order, payment, atau referensi"></label><label>Status<select id="status-filter" name="status"><option value="">Semua status</option><option>PAID</option><option>PENDING</option><option>FAILED</option><option>EXPIRED</option></select></label><label>Merchant<select id="merchant-filter" name="merchant_id"><option value="">Semua merchant</option></select></label><label>Dari<input id="date-from" name="from" type="date"></label><label>Sampai<input id="date-to" name="to" type="date"></label><button class="filter-reset" id="reset-payment-filters" type="button">Reset</button></form><div class="ledger-summary" id="ledger-summary"></div><div id="payments-list"></div><div class="pagination" id="payment-pagination"><button id="payments-prev" type="button">← Sebelumnya</button><span id="payment-page-label"></span><button id="payments-next" type="button">Berikutnya →</button></div></div></section>
+        <section id="methods-view" class="view" hidden><div class="methods-hero"><div><p class="kicker">PAYMENT ORCHESTRATION</p><h2>Channel pembayaran</h2><p>Aktifkan metode Tokopay yang tersedia untuk setiap merchant.</p></div><div class="method-stat" id="method-stat">—</div></div><div class="method-toolbar"><label>Merchant<select id="method-merchant" aria-label="Pilih merchant"></select></label><label>Cari channel<input id="method-search" type="search" placeholder="QRIS, BCA, GoPay…"></label><label>Kategori<select id="method-category"><option value="">Semua kategori</option><option value="VIRTUAL_ACCOUNT">Virtual Account</option><option value="E_MONEY">E-Money</option><option value="QRIS">QRIS</option><option value="RETAIL">Retail</option></select></label><label>Status<select id="method-status"><option value="">Semua status</option><option value="active">Aktif</option><option value="inactive">Nonaktif</option></select></label></div><div id="method-grid" class="method-grid"></div></section>
+        <section id="merchants-view" class="view" hidden><div class="two-col"><div class="panel"><div class="panel-head"><div><p class="kicker">CONNECTED SITES</p><h2>Merchant</h2></div></div><div id="merchants-list"></div></div><div class="panel add-merchant"><p class="kicker">KONEKSI BARU</p><h2>Tambah merchant</h2><form id="merchant-form"><label>Nama website / merchant<input name="name" required placeholder="Contoh: Topup Valorant"></label><label>Webhook callback URL <em>opsional</em><input name="callback_url" type="url" placeholder="https://site.com/webhooks/payment"></label><button id="create-merchant-button">Buat kredensial API <span>→</span></button></form><div id="credential" hidden></div></div></div></section>
+        <section id="webhooks-view" class="view" hidden><div class="panel"><div class="panel-head"><div><p class="kicker">DELIVERY OPERATIONS</p><h2>Webhook monitor</h2></div><button class="quiet" id="refresh-webhooks">↻ Refresh</button></div><div class="balance-grid" id="webhook-metrics"></div><div class="payment-filters"><label>Status<select id="webhook-status"><option value="">Semua status</option><option>DELIVERED</option><option>RETRYING</option><option>DEAD_LETTER</option><option>PENDING</option></select></label></div><div id="webhooks-list"></div></div></section>
+        <section id="finance-view" class="view" hidden><div class="panel"><div class="panel-head"><div><p class="kicker">MONEY MOVEMENT</p><h2>Saldo & settlement</h2></div></div><div class="balance-grid" id="finance-balances"></div><div class="section-title"><h2>Settlement queue</h2><span>Owner approval</span></div><div id="settlements-list"></div><div class="section-title"><h2>Refund history</h2><span>All merchants</span></div><div id="refunds-list"></div></div></section>
+        <section id="analytics-view" class="view" hidden><div class="panel"><div class="panel-head"><div><p class="kicker">PERFORMANCE INTELLIGENCE</p><h2>Analytics</h2></div></div><div class="balance-grid" id="analytics-metrics"></div><div class="dashboard-grid"><div class="panel" id="analytics-status"></div><div class="panel" id="analytics-methods"></div></div></div></section>
+        <section id="ip-whitelist-view" class="view" hidden><div class="ip-hero"><div class="ip-shield">♢</div><div><p class="kicker">API ACCESS CONTROL</p><h2>Whitelist IP</h2><p>Kelola daftar IP yang diizinkan mengakses API.</p></div><button id="open-ip-rule" type="button">+ Tambah IP</button></div><div class="ip-toolbar"><label>Merchant<select id="ip-merchant" aria-label="Pilih merchant"></select></label><button class="quiet" id="refresh-ip-rules" type="button">↻ Refresh</button></div><div id="ip-enforcement-banner"></div><div class="ip-metrics" id="ip-metrics"></div><section class="panel ip-rules-panel"><div class="panel-head"><div><p class="kicker">ALLOWED NETWORKS</p><h2>Daftar IP & CIDR</h2></div><span id="ip-rule-count"></span></div><div id="ip-rules-list"></div></section></section>
+        <section id="audit-view" class="view" hidden><div class="panel"><div class="panel-head"><div><p class="kicker">SECURITY TRAIL</p><h2>Audit log</h2></div></div><div id="audit-list"></div></div></section>
+      </div>
+    </section>
+  </main>
+  <div class="modal-backdrop" id="merchant-modal" hidden><section class="merchant-modal" role="dialog" aria-modal="true" aria-labelledby="merchant-modal-title"><button class="close-modal" id="close-merchant-modal" aria-label="Tutup">×</button><p class="kicker">MERCHANT CONTROL</p><h2 id="merchant-modal-title">Kelola merchant</h2><form id="merchant-edit-form"><input id="edit-merchant-id" type="hidden"><label>Nama merchant<input id="edit-merchant-name" name="name" required></label><label>Webhook callback URL <em>opsional</em><input id="edit-merchant-callback" name="callback_url" type="url"></label><button id="save-merchant-button">Simpan perubahan <span>→</span></button></form><div class="modal-actions"><button class="outline-action" id="rotate-key-button">Rotasi API key</button><button class="danger-action" id="toggle-merchant-button"></button></div><div class="merchant-danger-zone"><div><b>Hapus merchant</b><span>Hanya tersedia jika belum ada histori transaksi atau keuangan.</span></div><button class="danger-action" id="open-delete-merchant" type="button">Hapus merchant</button></div><small id="merchant-action-error"></small><div id="rotated-credential" hidden></div></section></div>
+  <div class="modal-backdrop" id="delete-merchant-modal" hidden><section class="merchant-modal delete-merchant-modal" role="alertdialog" aria-modal="true" aria-labelledby="delete-merchant-title"><button class="close-modal" id="close-delete-merchant" aria-label="Tutup">×</button><p class="kicker danger-kicker">DANGER ZONE</p><h2 id="delete-merchant-title">Hapus merchant permanen?</h2><p class="delete-warning">Kredensial dan konfigurasi merchant akan dihapus. Merchant dengan histori transaksi atau keuangan tidak dapat dihapus.</p><p>Ketik <strong id="delete-merchant-name"></strong> untuk melanjutkan.</p><label>Nama merchant<input id="delete-merchant-confirmation" autocomplete="off" spellcheck="false"></label><small id="delete-merchant-error"></small><button class="delete-confirm-button" id="confirm-delete-merchant" type="button" disabled>Hapus permanen</button></section></div>
+  <div class="modal-backdrop transaction-backdrop" id="payment-modal" hidden><section class="payment-modal transaction-inspector" role="dialog" aria-modal="true" aria-labelledby="payment-modal-title"><header class="transaction-header"><div class="transaction-heading"><button class="transaction-back" id="close-payment-modal" type="button" aria-label="Kembali ke daftar transaksi">← <span>Kembali ke daftar transaksi</span></button><div class="transaction-title-row"><span class="badge" id="payment-modal-status">—</span><small id="payment-modal-date">—</small></div><h2 id="payment-modal-title">Detail transaksi</h2><p id="payment-modal-reference">—</p></div><div class="transaction-header-actions" id="payment-header-actions"></div></header><div id="payment-detail" class="transaction-detail-body"></div><small id="payment-action-error"></small></section></div>
+  <div class="modal-backdrop" id="verification-modal" hidden><section class="merchant-modal verification-modal" role="alertdialog" aria-modal="true" aria-labelledby="verification-title" aria-describedby="verification-description"><button class="close-modal" id="close-verification-modal" aria-label="Batalkan">×</button><div class="modal-symbol" id="verification-symbol" aria-hidden="true">?</div><p class="kicker" id="verification-kicker">VERIFIKASI AKSI</p><h2 id="verification-title">Konfirmasi tindakan</h2><p id="verification-description" class="modal-description"></p><small id="verification-error"></small><div class="verification-actions"><button class="outline-action" id="cancel-verification" type="button">Batalkan</button><button class="verification-confirm" id="confirm-verification" type="button">Konfirmasi</button></div></section></div>
+  <div class="modal-backdrop" id="notice-modal" hidden><section class="merchant-modal notice-modal" role="alertdialog" aria-modal="true" aria-labelledby="notice-title" aria-describedby="notice-description"><button class="close-modal" id="close-notice-modal" aria-label="Tutup">×</button><div class="modal-symbol" id="notice-symbol" aria-hidden="true">!</div><p class="kicker" id="notice-kicker">INFORMASI</p><h2 id="notice-title">Informasi</h2><p id="notice-description" class="modal-description"></p><div id="notice-content" hidden></div><button class="notice-confirm" id="confirm-notice" type="button">Mengerti</button></section></div>
+  <div class="modal-backdrop" id="ip-rule-modal" hidden><section class="merchant-modal ip-rule-modal" role="dialog" aria-modal="true" aria-labelledby="ip-rule-title" aria-describedby="ip-rule-description"><button class="close-modal" id="close-ip-rule" aria-label="Tutup">×</button><div class="modal-symbol" aria-hidden="true">⌁</div><p class="kicker">NETWORK ACCESS</p><h2 id="ip-rule-title">Tambahkan IP</h2><p id="ip-rule-description" class="modal-description">Masukkan IPv4, IPv6, atau jaringan CIDR yang dipercaya.</p><form id="ip-rule-form"><label>IP atau CIDR<input id="ip-rule-cidr" name="cidr" required maxlength="64" autocomplete="off" spellcheck="false" placeholder="203.0.113.10 atau 203.0.113.0/24"></label><label>Label <em>opsional</em><input id="ip-rule-label" name="label" maxlength="80" placeholder="Server produksi Jakarta"></label><small id="ip-rule-error"></small><button id="create-ip-rule" type="submit">Tambahkan ke whitelist <span>→</span></button></form></section></div>
+  <div class="modal-backdrop" id="refund-modal" hidden><section class="merchant-modal refund-modal" role="dialog" aria-modal="true" aria-labelledby="refund-modal-title" aria-describedby="refund-modal-description"><button class="close-modal" id="close-refund-modal" aria-label="Batalkan">×</button><div class="modal-symbol danger" aria-hidden="true">↩</div><p class="kicker danger-kicker">REFUND VERIFICATION</p><h2 id="refund-modal-title">Konfirmasi refund</h2><p id="refund-modal-description" class="modal-description">Refund tidak dapat dibatalkan setelah diproses oleh penyedia pembayaran.</p><form id="refund-form"><label>Nominal refund <em>kosongkan untuk refund penuh</em><input id="refund-amount" name="amount" type="number" min="1" step="1" inputmode="numeric" placeholder="Refund penuh"></label><label>Alasan refund<input id="refund-reason" name="reason" required maxlength="200" value="Customer request"></label><small id="refund-error"></small><div class="verification-actions"><button class="outline-action" id="cancel-refund" type="button">Batalkan</button><button class="delete-confirm-button" id="confirm-refund" type="submit">Proses refund</button></div></form></section></div>
+  <div class="modal-backdrop" id="method-modal" hidden><section class="merchant-modal method-modal" role="dialog" aria-modal="true" aria-labelledby="method-modal-title"><button class="close-modal" id="close-method-modal" aria-label="Tutup">×</button><p class="kicker">CHANNEL CONFIGURATION</p><h2 id="method-modal-title">Atur metode pembayaran</h2><p id="method-modal-code" class="modal-subtitle"></p><form id="method-config-form"><input id="method-config-code" type="hidden"><div class="form-grid"><label>Biaya tetap (Rp)<input id="method-fee-fixed" name="admin_fee_fixed" type="number" min="0" step="1" required></label><label>Biaya persentase (%)<input id="method-fee-percentage" name="admin_fee_percentage" type="number" min="0" max="100" step="0.01" required></label><label>Biaya ditanggung<select id="method-fee-bearer" name="fee_bearer"><option value="MERCHANT">Merchant</option><option value="CUSTOMER">Pembeli</option></select></label><label>Settlement<input id="method-settlement" name="settlement_label" maxlength="80" placeholder="Contoh: T+1" required></label><label>Minimum pembayaran (Rp)<input id="method-minimum" name="minimum_amount" type="number" min="1" step="1" required></label><label>Maksimum pembayaran (Rp)<input id="method-maximum" name="maximum_amount" type="number" min="1000" step="1" placeholder="Tanpa batas"></label></div><button id="save-method-config">Simpan konfigurasi <span>→</span></button></form><small id="method-config-error"></small></section></div>
+  <script src="/app.js"></script>
+</body>
+</html>

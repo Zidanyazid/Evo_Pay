@@ -1,0 +1,9 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { publicPayment } from '../src/services/payment-service.js';
+import { readFileSync } from 'node:fs';
+const app=readFileSync(new URL('../public/app.js',import.meta.url),'utf8');
+const html=readFileSync(new URL('../public/index.html',import.meta.url),'utf8');
+test('payment serializer exposes operational transaction detail',()=>{const payment=publicPayment({id:'pay_1',merchant_id:'mer_1',merchant_order_id:'order_1',provider:'TOKOPAY',provider_reference:'ref_1',provider_transaction_id:'trx_1',status:'PAID',payment_method:'QRIS',amount:10000,total_amount:10500,fee_amount:500,net_amount:10000,customer_name:'Ayu',customer_email:'ayu@example.com',customer_phone:'0812',redirect_url:'https://merchant.test/success',created_at:'2026-01-01T00:00:00.000Z',updated_at:'2026-01-01T00:01:00.000Z'});assert.equal(payment.merchant_id,'mer_1');assert.equal(payment.provider_transaction_id,'trx_1');assert.deepEqual(payment.customer,{name:'Ayu',email:'ayu@example.com',phone:'0812'});assert.equal(payment.redirect_url,'https://merchant.test/success');});
+test('transaction inspector contains reference sections and actions',()=>{assert.match(html,/class="payment-modal transaction-inspector"/);for(const section of ['Ringkasan Transaksi','Detail Pembayaran','Data Customer','Waktu','Status Dana','Data Produk (1)','Log Webhook'])assert.ok(app.includes(section));assert.match(app,/id="sync-selected-payment"/);assert.match(app,/Kirim Webhook/);assert.match(app,/id="refund-selected-payment"/);});
+test('transaction renderer escapes operational values',()=>{assert.match(app,/transactionField\('ID',p\.id/);assert.match(app,/escapeHTML\(p\.description/);assert.match(app,/escapeHTML\(item\.id\)/);assert.match(app,/escapeHTML\(note\.body\)/);});

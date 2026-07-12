@@ -1,0 +1,23 @@
+{
+  "name": "nexuspay-gateway",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Self-hosted multi-merchant payment gateway with Tokopay adapter",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "check:syntax": "find src public test -name '*.js' -type f -exec node --check {} \\;",
+    "test": "node --test",
+    "test:unit": "node --test test/*.test.js",
+    "test:integration": "node --test test/*integration.test.js",
+    "test:production": "npm run check:syntax && npm test && npm audit --omit=dev --audit-level=high",
+    "db:backup": "node scripts/database-maintenance.js backup",
+    "db:verify": "node scripts/database-maintenance.js verify",
+    "test:load": "node scripts/load-smoke.js",
+    "certify:staging": "node scripts/staging-certification.js",
+    "check:production": "npm run test:production"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": { "better-sqlite3": "^11.8.1", "dotenv": "^16.4.7", "express": "^4.21.2", "helmet": "^8.0.0" }
+}

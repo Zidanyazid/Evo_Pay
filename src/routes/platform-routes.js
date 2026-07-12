@@ -1,0 +1,20 @@
+import { Router } from 'express';
+import db from '../database.js';
+import { authorize } from '../middleware/authorization.js';
+import { audit } from '../services/audit-service.js';
+const auth=authorize();
+const log=(req,action,targetType,targetId,metadata)=>audit(action,{actorId:req.admin.user_id,targetType,targetId,ip:req.ip,userAgent:req.get('user-agent'),metadata});
+export default function platformRoutes(credentials,onboarding,subscriptions){const router=Router();
+router.get('/plans',auth,(req,res)=>res.json({data:subscriptions.plans()}));
+router.post('/merchants/:merchantId/subscription',auth,(req,res,next)=>{try{const data=subscriptions.assign(req.params.merchantId,req.body.plan_id,{trialDays:req.body.trial_days,couponCode:req.body.coupon_code});log(req,'subscription.assigned','merchant',req.params.merchantId,{plan_id:req.body.plan_id});res.json({data})}catch(e){next(e)}});
+router.get('/merchants/:merchantId/credentials',auth,(req,res)=>res.json({data:credentials.list(req.params.merchantId)}));
+router.post('/merchants/:merchantId/credentials',auth,(req,res,next)=>{try{const data=credentials.create({merchantId:req.params.merchantId,name:req.body.name,environment:req.body.environment,scopes:req.body.scopes,expiresAt:req.body.expires_at});log(req,'credential.created','credential',data.id,{merchant_id:req.params.merchantId,environment:data.environment,scopes:data.scopes});res.status(201).json({data})}catch(e){next(e)}});
+router.post('/credentials/:id/rotate',auth,(req,res,next)=>{try{const data=credentials.rotate(req.params.id,req.body?.overlap_hours);log(req,'credential.rotated','credential',req.params.id,{replacement_id:data.id});res.status(201).json({data})}catch(e){next(e)}});
+router.post('/credentials/:id/revoke',auth,(req,res,next)=>{try{const data=credentials.revoke(req.params.id);log(req,'credential.revoked','credential',req.params.id);res.json({data})}catch(e){next(e)}});
+router.get('/merchants/:merchantId/onboarding',auth,(req,res)=>res.json({data:onboarding.get(req.params.merchantId)}));
+router.put('/merchants/:merchantId/onboarding',auth,(req,res,next)=>{try{const data=onboarding.save(req.params.merchantId,req.body);log(req,'onboarding.saved','merchant',req.params.merchantId);res.json({data})}catch(e){next(e)}});
+router.post('/merchants/:merchantId/onboarding/submit',auth,(req,res,next)=>{try{const data=onboarding.submit(req.params.merchantId);log(req,'onboarding.submitted','onboarding',data.id);res.json({data})}catch(e){next(e)}});
+router.post('/onboarding/:id/documents',auth,(req,res,next)=>{try{const data=onboarding.addDocument(req.params.id,req.body);log(req,'kyc.document_added','onboarding',req.params.id,{document_type:data.document_type,checksum:data.checksum});res.status(201).json({data})}catch(e){next(e)}});
+router.get('/onboarding',auth,(req,res)=>res.json({data:db.prepare('SELECT o.*,m.name merchant_name FROM onboarding_applications o JOIN merchants m ON m.id=o.merchant_id ORDER BY o.updated_at DESC').all()}));
+router.post('/onboarding/:id/review',auth,(req,res,next)=>{try{const data=onboarding.review(req.params.id,{...req.body,reviewerId:req.admin.user_id});log(req,'onboarding.reviewed','onboarding',req.params.id,{status:req.body.status,risk_tier:req.body.risk_tier});res.json({data})}catch(e){next(e)}});
+return router}
