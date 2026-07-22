@@ -13,13 +13,17 @@ export class WebhookService {
     if (!valid || !payment) return { accepted: false, payment: null };
     const amount = Number(payload?.data?.total_dibayar || payload?.data?.nominal || payment.total_amount);
     if (amount !== payment.total_amount) return { accepted: false, payment: null };
-    const synchronized = await this.paymentService.sync(payment).catch(async () => this.paymentService.updateStatus(payment, ['success', 'completed'].includes(String(payload.status).toLowerCase()) ? 'PAID' : 'PENDING', { raw: payload, providerTransactionId: payload.reference }));
-    if (synchronized.status === 'PAID') await this.queueMerchantCallback(synchronized);
-    return { accepted: true, payment: synchronized };
+    const rawStatus=payload?.data?.status||payload?.payment_status||payload?.status;
+    const value=String(rawStatus||'').toLowerCase();
+    const status=['success','completed','paid'].includes(value)?'PAID':['expired','expire'].includes(value)?'EXPIRED':['failed','failure','cancelled','canceled'].includes(value)?'FAILED':'PENDING';
+    const synchronized=await this.paymentService.updateStatus(payment,status,{raw:payload,providerTransactionId:payload.reference});
+    if(synchronized.status==='PAID')await this.queueMerchantCallback(synchronized);
+    return {accepted:true,payment:synchronized};
   }
   async queueMerchantCallback(payment, eventType = 'payment.paid') {
     const merchant = await db.get('SELECT * FROM merchants WHERE id=?', [payment.merchant_id]); if (!merchant?.callback_url) return;
-    const duplicate = await db.get("SELECT id FROM webhook_deliveries WHERE payment_id=? AND event_type=? AND status IN ('PENDING','RETRYING','DELIVERED')", [payment.id, eventType]); if (duplicate) return duplicate.id;
+    const afterPaid=payment.paid_at?" AND created_at>=?":'';
+    const duplicate=await db.get(`SELECT id FROM webhook_deliveries WHERE payment_id=? AND event_type=? AND status IN ('PENDING','RETRYING','DELIVERED')${afterPaid}`,[payment.id,eventType,...(payment.paid_at?[payment.paid_at]:[])]); if(duplicate)return duplicate.id;
     const timestamp = now(); const deliveryId = id('dlv'); const body = JSON.stringify({ event: eventType, data: publicPayment(payment) });
     const secret = merchant.webhook_secret || merchant.api_key_hash; const signature = crypto.createHmac('sha256', secret).update(body).digest('hex');
     await db.run('INSERT INTO webhook_deliveries (id,payment_id,url,payload_json,status,event_type,next_attempt_at,signature,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?)', [deliveryId, payment.id, merchant.callback_url, body, 'PENDING', eventType, timestamp, signature, timestamp, timestamp]);

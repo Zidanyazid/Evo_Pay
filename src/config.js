@@ -21,7 +21,9 @@ export function productionConfigErrors(env=process.env) {
   if(!env.ENCRYPTION_KEY||env.ENCRYPTION_KEY.length<32||/replace-with|development/i.test(env.ENCRYPTION_KEY))errors.push('ENCRYPTION_KEY wajib random dan minimal 32 karakter.');
   if(!env.TOKOPAY_MERCHANT_ID||!env.TOKOPAY_SECRET)errors.push('Kredensial Tokopay wajib tersedia.');
   if(env.SIMULATOR_ENABLED!=='0')errors.push('SIMULATOR_ENABLED harus 0.');
-  if(!env.DATABASE_PATH||env.DATABASE_PATH===':memory:')errors.push('DATABASE_PATH persisten wajib ditentukan.');
+  if(!env.DB_HOST||!env.DB_NAME||!env.DB_USER)errors.push('Konfigurasi MySQL DB_HOST, DB_NAME, dan DB_USER wajib ditentukan.');
+  if(env.DB_NAME!=='sql_nexuspay_evogamestore_com')errors.push('DB_NAME harus sql_nexuspay_evogamestore_com pada deployment EvoGameStore.');
+  if(!env.DB_PASSWORD)errors.push('DB_PASSWORD wajib diisi pada produksi.');
   if(!['0','1'].includes(env.TRUST_PROXY||'0'))errors.push('TRUST_PROXY hanya mendukung 0 atau 1.');
   for(const [name,result] of [['ADMIN_SESSION_TTL_MS',sessionTtl],['MERCHANT_RATE_LIMIT',rateLimit],['WEBHOOK_TIMEOUT_MS',webhookTimeout],['WORKER_INTERVAL_MS',workerInterval]])if(env[name]!=null&&!result.valid)errors.push(`${name} berada di luar rentang aman.`);
   return errors;

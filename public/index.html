@@ -7,8 +7,8 @@
   <meta name="description" content="Dashboard merchant NexusPay untuk memantau saldo, transaksi, dan integrasi pembayaran.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css?v=20260717-menu-restore-v8">
 </head>
 <body>
   <main id="app">
@@ -20,16 +20,16 @@
             <a href="#features">Fitur</a>
             <a href="/docs.html">Dokumentasi</a>
           </div>
-          <button class="landing-cta-small" onclick="document.getElementById('login-card-anchor').scrollIntoView({behavior:'smooth'})">Masuk Dashboard →</button>
+          <button class="landing-cta-small" onclick="document.getElementById('login-card-anchor').scrollIntoView({behavior:'smooth'})">Masuk dashboard</button>
         </nav>
 
         <div class="hero-content">
-          <div class="hero-badge">🚀 Payment Gateway Terpercaya</div>
-          <h1>Kelola Pembayaran<br><span class="gradient-text">Lebih Cerdas.</span></h1>
-          <p class="hero-desc">Platform payment gateway self-hosted dengan integrasi Tokopay. Pantau transaksi, kelola merchant, dan terima pembayaran dari berbagai channel dalam satu dashboard.</p>
+          <div class="hero-badge"><i></i> QRIS • Virtual Account • Webhook</div>
+          <h1>Terima pembayaran<br><span class="gradient-text">lebih mudah dengan NexusPay</span></h1>
+          <p class="hero-desc">Landing dan dashboard merchant untuk mengelola link pembayaran, invoice, callback, channel QRIS Realtime, dan settlement dari satu workspace.</p>
           <div class="hero-actions">
-            <button class="hero-btn primary" onclick="document.getElementById('login-card-anchor').scrollIntoView({behavior:'smooth'})">Masuk ke Dashboard <span>→</span></button>
-            <a href="/docs.html" class="hero-btn outline">Baca Dokumentasi</a>
+            <button class="hero-btn primary" onclick="document.getElementById('login-card-anchor').scrollIntoView({behavior:'smooth'})">Masuk dashboard</button>
+            <a href="/docs.html" class="hero-btn outline">Lihat dokumentasi</a>
           </div>
         </div>
 
@@ -37,19 +37,19 @@
           <div class="hero-glow"></div>
           <div class="hero-card-stack">
             <div class="hero-stat-card">
-              <span>Total Volume</span>
-              <strong>Rp 124.5 M</strong>
-              <small>↗ +12.4% dari bulan lalu</small>
+              <span>Payment lifecycle</span>
+              <strong>Invoice → webhook</strong>
+              <small>Status dari provider, bukan asumsi</small>
             </div>
             <div class="hero-stat-card accent">
-              <span>Success Rate</span>
-              <strong>99.2%</strong>
-              <small>Uptime 99.99%</small>
+              <span>Operations</span>
+              <strong>Ledger terpusat</strong>
+              <small>Filter, audit, refund, dan settlement</small>
             </div>
             <div class="hero-stat-card lav">
-              <span>Metode Pembayaran</span>
-              <strong>26 Channel</strong>
-              <small>VA, E-Money, QRIS, Retail</small>
+              <span>Merchant control</span>
+              <strong>API + callbacks</strong>
+              <small>Konfigurasi per merchant</small>
             </div>
           </div>
         </div>
@@ -58,51 +58,36 @@
       <div class="landing-features" id="features">
         <div class="features-header">
           <p class="kicker">KENAPA NEXUSPAY?</p>
-          <h2>Fitur yang Membuat Pembayaran Mudah</h2>
+          <h2>Solusi pembayaran lengkap untuk bisnis Anda</h2>
         </div>
-        <div class="features-grid">
-          <div class="feature-card">
-            <div class="feature-icon">⚡</div>
-            <h3>Multi-Channel</h3>
-            <p>26 metode pembayaran terintegrasi — Virtual Account, E-Money, QRIS, dan gerai retail.</p>
-          </div>
-          <div class="feature-card">
-            <div class="feature-icon">🔒</div>
-            <h3>Keamanan Enterprise</h3>
-            <p>IP whitelist, RBAC, CSRF protection, SSRF guard, dan enkripsi end-to-end.</p>
-          </div>
-          <div class="feature-card">
-            <div class="feature-icon">📊</div>
-            <h3>Dashboard Real-time</h3>
-            <p>Pantau transaksi, saldo, webhook, dan analytics dalam satu dashboard yang powerful.</p>
-          </div>
-          <div class="feature-card">
-            <div class="feature-icon">🔄</div>
-            <h3>Webhook Reliable</h3>
-            <p>Notifikasi otomatis dengan retry, dead-letter queue, dan monitoring pengiriman.</p>
-          </div>
-          <div class="feature-card">
-            <div class="feature-icon">💰</div>
-            <h3>Settlement & Refund</h3>
-            <p>Approval workflow, rekonsiliasi otomatis, dan refund management yang lengkap.</p>
-          </div>
-          <div class="feature-card">
-            <div class="feature-icon">🛡️</div>
-            <h3>Self-Hosted</h3>
-            <p>Deploy di infrastruktur sendiri. Data Anda tetap di server Anda — privasi terjaga.</p>
-          </div>
+        <div class="features-grid aulaa-feature-grid">
+          <div class="feature-card"><div class="feature-icon">01</div><h3>Pembayaran instan & aman</h3><p>Terima pembayaran melalui QRIS Realtime dan Virtual Account dengan status yang jelas.</p></div>
+          <div class="feature-card"><div class="feature-icon">02</div><h3>QRIS dinamis</h3><p>Invoice membuat QR secara otomatis untuk setiap transaksi dan nominal pelanggan.</p></div>
+          <div class="feature-card"><div class="feature-icon">03</div><h3>Virtual Account</h3><p>Kelola channel pembayaran bank dari satu dashboard merchant.</p></div>
+          <div class="feature-card"><div class="feature-icon">04</div><h3>Konfirmasi otomatis</h3><p>Webhook provider mengubah status invoice dan meneruskan callback ke aplikasi Anda.</p></div>
+          <div class="feature-card"><div class="feature-icon">05</div><h3>Dashboard real-time</h3><p>Pantau transaksi, volume, channel, settlement, dan refund tanpa berpindah sistem.</p></div>
+          <div class="feature-card"><div class="feature-icon">06</div><h3>API developer-friendly</h3><p>Dokumentasi dan endpoint siap digunakan untuk integrasi payment link Anda.</p></div>
         </div>
       </div>
 
       <div class="landing-stats">
-        <div class="stat-item"><strong>99.99%</strong><span>Uptime</span></div>
+        <div class="stat-item"><strong>Webhook</strong><span>Provider-confirmed status</span></div>
         <div class="stat-divider"></div>
-        <div class="stat-item"><strong>26+</strong><span>Payment Channel</span></div>
+        <div class="stat-item"><strong>Ledger</strong><span>Transaction history</span></div>
         <div class="stat-divider"></div>
-        <div class="stat-item"><strong>&lt;200ms</strong><span>API Response</span></div>
+        <div class="stat-item"><strong>API</strong><span>Merchant-ready integration</span></div>
         <div class="stat-divider"></div>
-        <div class="stat-item"><strong>24/7</strong><span>Monitoring</span></div>
+        <div class="stat-item"><strong>24/7</strong><span>Operational visibility</span></div>
       </div>
+
+      <section class="aulaa-merchant-section">
+        <div class="aulaa-dashboard-copy"><p class="kicker">DASHBOARD MERCHANT</p><h2>Dashboard merchant yang intuitif</h2><p>Kelola transaksi, analisis pendapatan, channel pembayaran, dan callback merchant melalui satu dashboard yang lengkap.</p><div class="aulaa-points"><span>Laporan real-time</span><span>Settlement cepat</span><span>Multi-device access</span><span>API developer friendly</span></div><a href="/docs.html" class="hero-btn outline">Dokumentasi API</a></div>
+        <div class="aulaa-dashboard-preview"><div class="preview-top"><span></span><span></span><span></span></div><div class="preview-card big"></div><div class="preview-grid"><i></i><i></i><i></i><i></i></div><div class="preview-list"><b></b><b></b><b></b></div></div>
+      </section>
+
+      <section class="aulaa-faq-section"><p class="kicker">TANYA JAWAB</p><h2>Pertanyaan yang sering diajukan</h2><div class="aulaa-faq-list"><details><summary>Apa itu NexusPay?</summary><p>NexusPay adalah payment gateway merchant untuk menerima pembayaran dan mengirim callback status transaksi.</p></details><details><summary>Metode pembayaran apa saja yang didukung?</summary><p>Channel merchant dapat mengaktifkan QRIS Realtime, Virtual Account, e-wallet, dan channel Tokopay lain yang tersedia.</p></details><details><summary>Apakah status pembayaran otomatis?</summary><p>Ya. Status final mengikuti webhook provider yang valid, lalu NexusPay meneruskan callback ke merchant.</p></details></div></section>
+
+      <section class="aulaa-cta-section"><div><p class="kicker">PLATFORM MERCHANT</p><h2>Tingkatkan operasional pembayaran sekarang</h2><p>Masuk ke dashboard untuk memantau invoice, webhook, saldo, dan integrasi API merchant Anda.</p></div><button class="hero-btn primary" onclick="document.getElementById('login-card-anchor').scrollIntoView({behavior:'smooth'})">Mulai sekarang</button></section>
 
       <div class="login-section" id="login-card-anchor">
         <div class="login-visual">
@@ -120,10 +105,10 @@
           <p>Gunakan username dan password admin Anda.</p>
           <form id="login-form">
             <label for="username">Username</label>
-            <div class="field-wrap"><span>👤</span><input id="username" type="text" autocomplete="username" required placeholder="Masukkan username"></div>
+            <div class="field-wrap"><input id="username" type="text" autocomplete="username" required placeholder="Masukkan username"></div>
             <label for="password">Password</label>
-            <div class="field-wrap"><span>🔑</span><input id="password" type="password" autocomplete="current-password" required placeholder="Masukkan password"></div>
-            <button id="login-button">Masuk ke dashboard <span>→</span></button>
+            <div class="field-wrap"><input id="password" type="password" autocomplete="current-password" required placeholder="Masukkan password"></div>
+            <button id="login-button">Masuk dashboard</button>
             <small id="login-error" role="alert"></small>
           </form>
         </div>

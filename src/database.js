@@ -295,8 +295,8 @@ export async function initDatabase() {
     );
 
     CREATE TABLE IF NOT EXISTS risk_rules (
-      id VARCHAR(64) PRIMARY KEY, name VARCHAR(100) NOT NULL, signal VARCHAR(50) NOT NULL,
-      operator VARCHAR(10) NOT NULL, threshold DOUBLE NOT NULL, window_seconds INT,
+      id VARCHAR(64) PRIMARY KEY, name VARCHAR(100) NOT NULL, \`signal\` VARCHAR(50) NOT NULL,
+      \`operator\` VARCHAR(10) NOT NULL, threshold DOUBLE NOT NULL, window_seconds INT,
       score INT NOT NULL DEFAULT 0, action VARCHAR(20) NOT NULL DEFAULT 'REVIEW',
       is_active TINYINT NOT NULL DEFAULT 1, created_at VARCHAR(50) NOT NULL
     );
@@ -616,7 +616,7 @@ export async function initDatabase() {
   `);
 
   /* ── Seed admin ── */
-  const adminExists = await db.get('SELECT id FROM admin_users LIMIT 1');
+  const adminExists = await db.get('SELECT id, username FROM admin_users LIMIT 1');
   if (!adminExists && process.env.ADMIN_PASSWORD) {
     await db.run(
       'INSERT INTO admin_users (id,email,name,username,password_hash,role,created_at) VALUES (?,?,?,?,?,?,?)',

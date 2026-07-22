@@ -1,3 +1,3 @@
-import test from 'node:test';import assert from 'node:assert/strict';import db from '../src/database.js';
-test('SQLite integrity and foreign keys are healthy',()=>{assert.equal(db.pragma('integrity_check',{simple:true}),'ok');assert.deepEqual(db.pragma('foreign_key_check'),[]);});
-test('SQLite production pragmas are enabled',()=>{assert.equal(db.pragma('foreign_keys',{simple:true}),1);assert.equal(db.pragma('journal_mode',{simple:true}).toLowerCase(),'wal');assert.equal(db.pragma('busy_timeout',{simple:true}),5000);});
+import test,{after} from 'node:test';import assert from 'node:assert/strict';import db from '../src/database.js';
+after(()=>db.close());
+test('MySQL connection and required InnoDB tables are healthy',async()=>{const [connection,tables,settings]=await Promise.all([db.get('SELECT 1 ok,DATABASE() database_name'),db.get("SELECT COUNT(*) count FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name IN ('merchants','payments','merchant_payment_methods') AND engine='InnoDB'"),db.get('SELECT @@SESSION.foreign_key_checks foreign_key_checks')]);assert.equal(connection.ok,1);assert.ok(connection.database_name);assert.equal(Number(tables.count),3);assert.equal(Number(settings.foreign_key_checks),1);});

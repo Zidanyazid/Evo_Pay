@@ -41,7 +41,7 @@ export class PaymentService {
     if (risk?.decision === 'REVIEW') throw Object.assign(new Error('Pembayaran memerlukan manual review.'), { status: 409, code: 'RISK_REVIEW_REQUIRED', risk_event_id: risk.id });
 
     const selected = this.routing ? await this.routing.select(merchant.id, input.payment_method, input.amount) : { name: 'tokopay', provider: this.provider };
-    const fee = calculateFee({ merchantId: merchant.id, provider: selected.name, method: input.payment_method, amount: input.amount, methodConfig });
+    const fee = await calculateFee({ merchantId: merchant.id, provider: selected.name, method: input.payment_method, amount: input.amount, methodConfig });
     fee.settlement = methodConfig.settlement_label;
     fee.minimumAmount = methodConfig.minimum_amount;
     fee.maximumAmount = methodConfig.maximum_amount;
@@ -59,9 +59,12 @@ export class PaymentService {
     });
 
     try {
-      const result = await selected.provider.createPayment({ reference, amount: total, paymentMethod: input.payment_method, customerName: input.customer?.name, customerEmail: input.customer?.email, customerPhone: input.customer?.phone, callbackUrl: `${config.baseUrl}/webhooks/${selected.name}`, redirectUrl: `${config.baseUrl}/pay/${checkoutToken}` });
+      const result = await selected.provider.createPayment({ reference, amount: input.amount, paymentMethod: input.payment_method, customerName: input.customer?.name, customerEmail: input.customer?.email, customerPhone: input.customer?.phone, callbackUrl: `${config.baseUrl}/webhooks/${selected.name}`, redirectUrl: `${config.baseUrl}/pay/${checkoutToken}` });
       await db.transaction(async (tx) => {
-        await tx.run('UPDATE payments SET provider_reference=?,provider_transaction_id=?,total_amount=?,status=?,payment_code=?,payment_url=?,qr_string=?,instructions_json=?,expires_at=?,provider_payload_json=?,updated_at=? WHERE id=?', [result.providerReference, result.providerTransactionId, result.totalAmount, result.status, result.paymentCode, result.paymentUrl, result.qrString, JSON.stringify(result.instructions), result.expiresAt, JSON.stringify(result.raw), now(), paymentId]);
+        const providerTotal=Number(result.totalAmount)||0;
+        const effectiveTotal=providerTotal>Number(input.amount)?providerTotal:total;
+        const effectiveFee=Math.max(Number(fee.fee)||0,effectiveTotal-Number(input.amount));
+        await tx.run('UPDATE payments SET provider_reference=?,provider_transaction_id=?,total_amount=?,fee_amount=?,net_amount=?,status=?,payment_code=?,payment_url=?,qr_string=?,instructions_json=?,expires_at=?,provider_payload_json=?,updated_at=? WHERE id=?', [result.providerReference, result.providerTransactionId, effectiveTotal, effectiveFee, net, 'PENDING', result.paymentCode, result.paymentUrl, result.qrString, JSON.stringify(result.instructions), result.expiresAt, JSON.stringify(result.raw), now(), paymentId]);
         await tx.run('UPDATE payment_attempts SET status=?,updated_at=? WHERE id=?', ['CREATED', now(), attemptId]);
       });
     } catch (error) {

@@ -24,3 +24,12 @@ test('publishes the approved Tokopay payment method capabilities', () => {
   assert.ok(capabilities.includes('QRISREALTIME'));
   assert.ok(capabilities.includes('QRIS_CUSTOM'));
 });
+
+test('does not treat successful order creation as a paid payment', async (t) => {
+  t.mock.method(globalThis, 'fetch', async () => new Response(JSON.stringify({
+    status: true,
+    data: { status: 'Success', reff_id: 'NPREF001', reference: 'TP001', nominal: 1000 }
+  }), { status: 200, headers: { 'content-type': 'application/json' } }));
+  const result = await provider.createPayment({ reference: 'NPREF001', amount: 1000, paymentMethod: 'QRISREALTIME' });
+  assert.equal(result.status, 'PENDING');
+});
