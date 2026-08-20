@@ -26,3 +26,5 @@ coverage/
 *.p12
 *.token
 *_token
+.user.ini
+*.bak

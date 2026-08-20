@@ -7,7 +7,7 @@ const pool = mysql.createPool({
   port:     Number(process.env.DB_PORT || 3306),
   user:     process.env.DB_USER     || 'root',
   password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME     || 'nexuspay',
+  database: process.env.DB_NAME     || 'evopay',
   waitForConnections: true,
   connectionLimit: 20,
   charset: 'utf8mb4',
@@ -620,7 +620,7 @@ export async function initDatabase() {
   if (!adminExists && process.env.ADMIN_PASSWORD) {
     await db.run(
       'INSERT INTO admin_users (id,email,name,username,password_hash,role,created_at) VALUES (?,?,?,?,?,?,?)',
-      [id('usr'), process.env.ADMIN_EMAIL || 'admin@nexuspay.local', 'NexusPay Admin', process.env.ADMIN_USERNAME || 'admin', hashPassword(process.env.ADMIN_PASSWORD), 'owner', now()]
+      [id('usr'), process.env.ADMIN_EMAIL || 'admin@evopay.local', 'EvoPay Admin', process.env.ADMIN_USERNAME || 'admin', hashPassword(process.env.ADMIN_PASSWORD), 'owner', now()]
     );
   }
   if (adminExists && !adminExists.username) {

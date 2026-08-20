@@ -3,6 +3,7 @@ import db, { id, now } from '../database.js';
 import { publicPayment } from './payment-service.js';
 import { config } from '../config.js';
 import { resolvePublicUrl, validateOutboundUrl } from './outbound-url-policy.js';
+import { log } from '../observability.js';
 
 export class WebhookService {
   constructor(provider, paymentService) { this.provider = provider; this.paymentService = paymentService; }
@@ -37,9 +38,9 @@ export class WebhookService {
       const res = await fetch(item.url, { method: 'POST', redirect: 'manual', headers: { 'content-type': 'application/json', 'x-nexuspay-event': item.event_type, 'x-nexuspay-signature': `sha256=${item.signature}`, 'x-nexuspay-delivery': item.id }, body: item.payload_json, signal: AbortSignal.timeout(config.webhookTimeoutMs) });
       const responseBody = (await res.text().catch(() => '')).slice(0, 2000); const attempt = item.attempt_count + 1;
       await this.recordAttempt(item.id, attempt, res.status, responseBody, null, Date.now() - startedAt);
-      if (res.ok) await db.run('UPDATE webhook_deliveries SET status=?,attempt_count=?,response_code=?,response_body=?,last_error=NULL,delivered_at=?,updated_at=? WHERE id=?', ['DELIVERED', attempt, res.status, responseBody, now(), now(), item.id]);
+      if (res.ok) { await db.run('UPDATE webhook_deliveries SET status=?,attempt_count=?,response_code=?,response_body=?,last_error=NULL,delivered_at=?,updated_at=? WHERE id=?', ['DELIVERED', attempt, res.status, responseBody, now(), now(), item.id]); log('info', 'merchant_webhook_delivered', { delivery_id: item.id, payment_id: item.payment_id, attempt, status: res.status, duration_ms: Date.now() - startedAt }); }
       else await this.scheduleRetry(item, attempt, `HTTP ${res.status}`, res.status, responseBody);
-    } catch (error) { const attempt = item.attempt_count + 1; await this.recordAttempt(item.id, attempt, null, null, error.message, Date.now() - startedAt); await this.scheduleRetry(item, attempt, error.message, null, null); }
+    } catch (error) { const attempt = item.attempt_count + 1; await this.recordAttempt(item.id, attempt, null, null, error.message, Date.now() - startedAt); await this.scheduleRetry(item, attempt, error.message, null, null); log('error', 'merchant_webhook_failed', { delivery_id: item.id, payment_id: item.payment_id, attempt, message: error.message, duration_ms: Date.now() - startedAt }); }
   }
   async recordAttempt(deliveryId, attempt, responseCode, responseBody, error, latencyMs) { await db.run('INSERT INTO webhook_attempts (id,delivery_id,attempt_number,response_code,response_body,error,latency_ms,created_at) VALUES (?,?,?,?,?,?,?,?)', [id('wha'), deliveryId, attempt, responseCode, responseBody, error, latencyMs, now()]); }
   async scheduleRetry(item, attempt, error, code, body) { const delay = config.webhookRetries[attempt]; const status = delay == null ? 'DEAD_LETTER' : 'RETRYING'; const next = delay == null ? null : new Date(Date.now() + delay * 1000).toISOString(); await db.run('UPDATE webhook_deliveries SET status=?,attempt_count=?,response_code=?,response_body=?,last_error=?,next_attempt_at=?,updated_at=? WHERE id=?', [status, attempt, code, body, error, next, now(), item.id]); }

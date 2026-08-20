@@ -20,7 +20,7 @@ if(command==='verify'){
   else if(fs.existsSync(target))fail('Output backup sudah ada.');
   else{
     fs.mkdirSync(path.dirname(path.resolve(target)),{recursive:true});
-    const args=['--single-transaction','--quick','--routines','--triggers','--host',process.env.DB_HOST||'127.0.0.1','--port',process.env.DB_PORT||'3306','--user',process.env.DB_USER||'root','--result-file',path.resolve(target),process.env.DB_NAME||'nexuspay'];
+    const args=['--single-transaction','--quick','--routines','--triggers','--host',process.env.DB_HOST||'127.0.0.1','--port',process.env.DB_PORT||'3306','--user',process.env.DB_USER||'root','--result-file',path.resolve(target),process.env.DB_NAME||'evopay'];
     const result=spawnSync('mysqldump',args,{env:{...process.env,MYSQL_PWD:process.env.DB_PASSWORD||''},encoding:'utf8'});
     if(result.status!==0)fail(result.stderr?.trim()||'Backup MySQL gagal.');
     else{const hash=crypto.createHash('sha256').update(fs.readFileSync(target)).digest('hex');fs.writeFileSync(`${target}.json`,JSON.stringify({database:process.env.DB_NAME,created_at:new Date().toISOString(),sha256:hash},null,2));console.log(JSON.stringify({backup:path.resolve(target),sha256:hash}))}

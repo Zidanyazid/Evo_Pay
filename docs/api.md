@@ -1,4 +1,4 @@
-# NexusPay Merchant API
+# EvoPay Merchant API
 
 Base URL: `https://gateway.domain-anda.com/api/v1`
 

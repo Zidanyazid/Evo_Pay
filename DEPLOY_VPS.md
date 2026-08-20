@@ -1,6 +1,6 @@
-# Panduan Deployment NexusPay ke VPS (Ubuntu/Debian)
+# Panduan Deployment EvoPay ke VPS (Ubuntu/Debian)
 
-Tutorial ini menjelaskan langkah-langkah untuk melakukan *deploy* NexusPay ke Virtual Private Server (VPS) agar dapat berjalan di lingkungan *production* secara aman, stabil, dan dapat diakses melalui domain menggunakan HTTPS.
+Tutorial ini menjelaskan langkah-langkah untuk melakukan *deploy* EvoPay ke Virtual Private Server (VPS) agar dapat berjalan di lingkungan *production* secara aman, stabil, dan dapat diakses melalui domain menggunakan HTTPS.
 
 ## 1. Persiapan Server (Requirements)
 Pastikan VPS Anda (Ubuntu 20.04/22.04 LTS atau Debian) memiliki akses root/sudo dan domain yang sudah diarahkan (A record) ke IP VPS Anda (misal: `pay.domainanda.com`).
@@ -12,7 +12,7 @@ sudo apt install curl git build-essential nginx certbot python3-certbot-nginx -y
 ```
 
 ## 2. Instalasi Node.js (Versi 20 LTS)
-NexusPay membutuhkan Node.js. Gunakan NodeSource untuk menginstal versi LTS terbaru:
+EvoPay membutuhkan Node.js. Gunakan NodeSource untuk menginstal versi LTS terbaru:
 ```bash
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt install -y nodejs
@@ -24,14 +24,14 @@ node -v
 npm -v
 ```
 
-## 3. Clone Repositori NexusPay
+## 3. Clone Repositori EvoPay
 Kloning repositori GitHub Anda ke dalam direktori `/var/www/`.
 
 ```bash
 cd /var/www
-sudo git clone https://github.com/Zidanyazid/Nexus_Pay.git nexuspay
-sudo chown -R $USER:$USER /var/www/nexuspay
-cd nexuspay
+sudo git clone https://github.com/Zidanyazid/Nexus_Pay.git evopay
+sudo chown -R $USER:$USER /var/www/evopay
+cd evopay
 ```
 
 ## 4. Instalasi Dependensi & Konfigurasi
@@ -70,16 +70,16 @@ TOKOPAY_WEBHOOK_IPS=178.128.104.179
 ```
 
 ## 5. Menjalankan Aplikasi dengan PM2
-Gunakan **PM2** sebagai *process manager* agar NexusPay otomatis berjalan di *background* dan *restart* jika server direboot.
+Gunakan **PM2** sebagai *process manager* agar EvoPay otomatis berjalan di *background* dan *restart* jika server direboot.
 
 Instal PM2 secara global:
 ```bash
 sudo npm install -g pm2
 ```
 
-Jalankan NexusPay:
+Jalankan EvoPay:
 ```bash
-pm2 start src/server.js --name "nexuspay"
+pm2 start src/server.js --name "evopay"
 ```
 
 Konfigurasi agar PM2 berjalan otomatis saat server restart:
@@ -90,11 +90,11 @@ pm2 save
 ```
 
 ## 6. Setup Nginx (Reverse Proxy) & HTTPS
-Konfigurasikan Nginx agar meneruskan trafik dari port 80/443 (Domain) ke port 3000 (NexusPay).
+Konfigurasikan Nginx agar meneruskan trafik dari port 80/443 (Domain) ke port 3000 (EvoPay).
 
 Buat file konfigurasi Nginx baru:
 ```bash
-sudo nano /etc/nginx/sites-available/nexuspay
+sudo nano /etc/nginx/sites-available/evopay
 ```
 
 Isi dengan konfigurasi berikut (Ganti `pay.domainanda.com` dengan domain Anda):
@@ -121,7 +121,7 @@ server {
 
 Aktifkan konfigurasi Nginx dan tes sintaks:
 ```bash
-sudo ln -s /etc/nginx/sites-available/nexuspay /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/evopay /etc/nginx/sites-enabled/
 sudo nginx -t
 sudo systemctl reload nginx
 ```
@@ -134,7 +134,7 @@ sudo certbot --nginx -d pay.domainanda.com
 *Ikuti instruksi di layar, pilih opsi untuk `Redirect` seluruh trafik HTTP ke HTTPS.*
 
 ## 7. Setup Auto-Backup Database (Opsional tapi Direkomendasikan)
-Karena NexusPay menggunakan SQLite, Anda dapat mem-backup database dengan mudah menggunakan script yang sudah disediakan (`scripts/database-maintenance.js`).
+Karena EvoPay menggunakan SQLite, Anda dapat mem-backup database dengan mudah menggunakan script yang sudah disediakan (`scripts/database-maintenance.js`).
 
 Tambahkan Cron Job untuk melakukan backup otomatis setiap jam 2 pagi:
 ```bash
@@ -143,18 +143,18 @@ crontab -e
 
 Tambahkan baris berikut di bagian paling bawah:
 ```text
-0 2 * * * cd /var/www/nexuspay && /usr/bin/npm run db:backup >> /var/log/nexuspay-backup.log 2>&1
+0 2 * * * cd /var/www/evopay && /usr/bin/npm run db:backup >> /var/log/evopay-backup.log 2>&1
 ```
 
 ---
 
 ## 8. Selesai! 🎉
-NexusPay sekarang sudah berjalan *live* di server Anda! 
+EvoPay sekarang sudah berjalan *live* di server Anda! 
 1. Buka `https://pay.domainanda.com` di browser.
 2. Login menggunakan `ADMIN_USERNAME` dan `ADMIN_PASSWORD` yang Anda set di `.env`.
 3. Mulai kelola payment gateway Anda!
 
 ### Perintah Berguna (Cheatsheet)
-- Melihat log aplikasi secara realtime: `pm2 logs nexuspay`
-- Restart aplikasi (misal setelah ubah `.env`): `pm2 restart nexuspay`
+- Melihat log aplikasi secara realtime: `pm2 logs evopay`
+- Restart aplikasi (misal setelah ubah `.env`): `pm2 restart evopay`
 - Mengecek status keamanan/readiness internal: `npm run check:production`

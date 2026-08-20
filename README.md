@@ -1,6 +1,6 @@
-# NexusPay Gateway
+# EvoPay Gateway
 
-Gateway pembayaran **self-hosted** untuk banyak website topup. Website mengakses API NexusPay; NexusPay meneruskan transaksi ke Tokopay. Kredensial Tokopay tidak pernah dikirim ke browser atau merchant website.
+Gateway pembayaran **self-hosted** untuk banyak website topup. Website mengakses API EvoPay; EvoPay meneruskan transaksi ke Tokopay. Kredensial Tokopay tidak pernah dikirim ke browser atau merchant website.
 
 ## Mulai lokal
 
@@ -63,7 +63,7 @@ curl -X POST -H 'Authorization: Bearer API_KEY_MERCHANT' \
 
 ### Callback ke merchant
 
-Saat pembayaran menjadi `PAID`, NexusPay mengirim `POST` JSON ke URL callback yang disimpan pada merchant. Payload berbentuk:
+Saat pembayaran menjadi `PAID`, EvoPay mengirim `POST` JSON ke URL callback yang disimpan pada merchant. Payload berbentuk:
 
 ```json
 { "event": "payment.paid", "data": { "id": "pay_...", "order_id": "TOPUP-10001", "status": "PAID" } }
