@@ -1,0 +1,7 @@
+import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';
+const server=fs.readFileSync(new URL('../src/server.js',import.meta.url),'utf8'),openapi=fs.readFileSync(new URL('../public/openapi.yaml',import.meta.url),'utf8'),status=fs.readFileSync(new URL('../public/status.html',import.meta.url),'utf8');
+test('public API is versioned and emits lifecycle headers',()=>{assert.match(server,/app\.use\('\/api'/);assert.match(server,/EvoPay-API-Version/);assert.match(server,/Deprecation/);assert.match(server,/Sunset/);assert.match(server,/rel="deprecation"/);});
+test('API version telemetry and changelog are exposed',()=>{assert.match(server,/api_version_usage/);assert.match(server,/\/api\/changelog/);});
+test('OpenAPI contract documents versioned payments and idempotency',()=>{assert.match(openapi,/openapi: 3\.1\.0/);assert.match(openapi,/\/api\/v1/);assert.match(openapi,/Idempotency-Key/);assert.match(openapi,/createPayment/);});
+test('public status exposes aggregate only without tenant data',()=>{const block=server.slice(server.indexOf("app.get('/status'"),server.indexOf("app.get('/health'"));assert.match(block,/providers\.map/);assert.match(block,/public_status/);assert.doesNotMatch(block,/workspace_id|merchant_id|customer/);});
+test('status page has SEO and accessible semantic structure',()=>{assert.match(status,/<title>EvoPay Status<\/title>/);assert.match(status,/meta name="description"/);assert.equal((status.match(/<h1>/g)||[]).length,1);assert.match(status,/<main/);});

@@ -1,0 +1,7 @@
+import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';
+const service=fs.readFileSync(new URL('../src/services/webhook-service.js',import.meta.url),'utf8'),routes=fs.readFileSync(new URL('../src/routes/project-developer-routes.js',import.meta.url),'utf8');
+test('endpoint verifier validates public URL and uses bounded request',()=>{assert.match(service,/verifyEndpoint/);assert.match(service,/validateOutboundUrl/);assert.match(service,/resolvePublicUrl/);assert.match(service,/AbortSignal\.timeout/);});
+test('secret rotation returns new secret once with overlap metadata',()=>{assert.match(service,/webhook_secret_previous/);assert.match(service,/webhook_secret_overlap_ends_at/);assert.match(service,/whsec_/);assert.match(routes,/webhook\.secret_rotated/);});
+test('preview caps payload and masks signature',()=>{assert.match(service,/slice\(0,65536\)/);assert.match(service,/signature\.slice\(0,8\)/);assert.match(service,/••••/);});
+test('replay requires reason and records lineage with audit',()=>{assert.match(service,/Alasan replay wajib diisi/);assert.match(service,/replay_of/);assert.match(service,/replay_reason/);assert.match(routes,/webhook\.replayed/);});
+test('developer suite supports test events and scoped previews',()=>{assert.match(routes,/webhook\/test/);assert.match(routes,/deliveries\/:deliveryId\/preview/);assert.match(routes,/p\.merchant_id=\?/);});

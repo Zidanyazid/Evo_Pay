@@ -77,6 +77,18 @@ export async function initDatabase() {
   await db.exec(`
     CREATE TABLE IF NOT EXISTS schema_migrations (version INT PRIMARY KEY, applied_at VARCHAR(50) NOT NULL);
 
+    CREATE TABLE IF NOT EXISTS workspaces (
+      id VARCHAR(64) PRIMARY KEY, name VARCHAR(255) NOT NULL, slug VARCHAR(100) NOT NULL,
+      created_by VARCHAR(64), created_at VARCHAR(50) NOT NULL, updated_at VARCHAR(50) NOT NULL,
+      UNIQUE KEY idx_workspace_slug (slug)
+    );
+
+    CREATE TABLE IF NOT EXISTS workspace_members (
+      workspace_id VARCHAR(64) NOT NULL, user_id VARCHAR(64) NOT NULL, role VARCHAR(20) NOT NULL DEFAULT 'viewer',
+      is_active TINYINT NOT NULL DEFAULT 1, created_at VARCHAR(50) NOT NULL,
+      PRIMARY KEY (workspace_id,user_id), INDEX idx_workspace_member_user (user_id,is_active)
+    );
+
     CREATE TABLE IF NOT EXISTS merchants (
       id VARCHAR(64) PRIMARY KEY, name VARCHAR(255) NOT NULL, api_key_hash VARCHAR(255) NOT NULL,
       callback_url TEXT, is_active TINYINT NOT NULL DEFAULT 1, created_at VARCHAR(50) NOT NULL,
@@ -126,6 +138,26 @@ export async function initDatabase() {
       totp_secret_encrypted TEXT, totp_enabled TINYINT DEFAULT 0,
       locale VARCHAR(10) DEFAULT 'id-ID', timezone VARCHAR(50) DEFAULT 'Asia/Jakarta', username VARCHAR(100),
       UNIQUE KEY idx_admin_email (email)
+    );
+
+    CREATE TABLE IF NOT EXISTS identity_tokens (
+      id VARCHAR(64) PRIMARY KEY, user_id VARCHAR(64) CHARACTER SET utf8mb3 NOT NULL, purpose VARCHAR(30) NOT NULL,
+      token_hash VARCHAR(64) NOT NULL, expires_at VARCHAR(50) NOT NULL, used_at VARCHAR(50), created_at VARCHAR(50) NOT NULL,
+      UNIQUE KEY idx_identity_token (token_hash), INDEX idx_identity_user (user_id,purpose,expires_at),
+      CONSTRAINT fk_identity_user FOREIGN KEY (user_id) REFERENCES admin_users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS recovery_codes (
+      id VARCHAR(64) PRIMARY KEY, user_id VARCHAR(64) CHARACTER SET utf8mb3 NOT NULL, code_hash VARCHAR(64) NOT NULL,
+      used_at VARCHAR(50), created_at VARCHAR(50) NOT NULL, INDEX idx_recovery_user (user_id,used_at),
+      CONSTRAINT fk_recovery_user FOREIGN KEY (user_id) REFERENCES admin_users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS password_reset_tokens (
+      id VARCHAR(64) PRIMARY KEY, user_id VARCHAR(64) CHARACTER SET utf8mb3 NOT NULL, token_hash VARCHAR(64) NOT NULL,
+      expires_at VARCHAR(50) NOT NULL, used_at VARCHAR(50), requested_ip VARCHAR(50), created_at VARCHAR(50) NOT NULL,
+      UNIQUE KEY idx_reset_token (token_hash), INDEX idx_reset_user (user_id, expires_at),
+      CONSTRAINT fk_reset_user FOREIGN KEY (user_id) REFERENCES admin_users(id) ON DELETE CASCADE
     );
 
     CREATE TABLE IF NOT EXISTS admin_sessions (
@@ -210,10 +242,62 @@ export async function initDatabase() {
       CONSTRAINT fk_entry_acc FOREIGN KEY (account_id) REFERENCES ledger_accounts(id)
     );
 
+    CREATE TABLE IF NOT EXISTS payout_destinations (
+      id VARCHAR(64) PRIMARY KEY, merchant_id VARCHAR(64) CHARACTER SET utf8mb3 NOT NULL, type VARCHAR(20) NOT NULL,
+      name VARCHAR(100) NOT NULL, account_holder VARCHAR(255) NOT NULL, account_encrypted TEXT NOT NULL,
+      account_mask VARCHAR(32) NOT NULL, is_default TINYINT NOT NULL DEFAULT 0, is_active TINYINT NOT NULL DEFAULT 1,
+      created_by VARCHAR(64), created_at VARCHAR(50) NOT NULL, updated_at VARCHAR(50) NOT NULL,
+      INDEX idx_payout_merchant (merchant_id, is_active),
+      CONSTRAINT fk_payout_merchant FOREIGN KEY (merchant_id) REFERENCES merchants(id)
+    );
+
     CREATE TABLE IF NOT EXISTS settlements (
       id VARCHAR(64) PRIMARY KEY, merchant_id VARCHAR(64) NOT NULL, amount INT NOT NULL,
       status VARCHAR(20) NOT NULL, destination_json JSON, requested_by VARCHAR(64),
       approved_by VARCHAR(64), notes TEXT, created_at VARCHAR(50) NOT NULL, updated_at VARCHAR(50) NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS vaulted_payment_methods (
+      id VARCHAR(64) PRIMARY KEY, workspace_id VARCHAR(64) CHARACTER SET utf8mb3 NOT NULL, merchant_id VARCHAR(64) NOT NULL,
+      customer_id VARCHAR(64) NOT NULL, provider VARCHAR(50) NOT NULL, provider_token_encrypted TEXT NOT NULL,
+      token_fingerprint VARCHAR(64) NOT NULL, method_type VARCHAR(30) NOT NULL, brand VARCHAR(30), display_last4 VARCHAR(4),
+      expires_month INT, expires_year INT, consent_at VARCHAR(50) NOT NULL, revoked_at VARCHAR(50), created_at VARCHAR(50) NOT NULL,
+      UNIQUE KEY idx_vault_fingerprint (merchant_id,provider,token_fingerprint), INDEX idx_vault_customer (workspace_id,merchant_id,customer_id,revoked_at)
+    );
+
+    CREATE TABLE IF NOT EXISTS connected_accounts (
+      id VARCHAR(64) PRIMARY KEY, workspace_id VARCHAR(64) CHARACTER SET utf8mb3 NOT NULL, merchant_id VARCHAR(64) NOT NULL,
+      name VARCHAR(160) NOT NULL, external_reference VARCHAR(100), kyc_status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+      status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE', created_at VARCHAR(50) NOT NULL, updated_at VARCHAR(50) NOT NULL,
+      INDEX idx_connected_merchant (merchant_id,status)
+    );
+    CREATE TABLE IF NOT EXISTS split_rules (
+      id VARCHAR(64) PRIMARY KEY, merchant_id VARCHAR(64) NOT NULL, name VARCHAR(160) NOT NULL, is_active TINYINT NOT NULL DEFAULT 1,
+      allocations_json JSON NOT NULL, created_by VARCHAR(64), created_at VARCHAR(50) NOT NULL, updated_at VARCHAR(50) NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS payment_splits (
+      id VARCHAR(64) PRIMARY KEY, payment_id VARCHAR(64) NOT NULL, rule_id VARCHAR(64), net_amount BIGINT NOT NULL,
+      snapshot_json JSON NOT NULL, status VARCHAR(20) NOT NULL DEFAULT 'PENDING', created_at VARCHAR(50) NOT NULL,
+      UNIQUE KEY idx_payment_split (payment_id)
+    );
+    CREATE TABLE IF NOT EXISTS split_allocations (
+      id VARCHAR(64) PRIMARY KEY, split_id VARCHAR(64) NOT NULL, connected_account_id VARCHAR(64), allocation_type VARCHAR(20) NOT NULL,
+      amount BIGINT NOT NULL, status VARCHAR(20) NOT NULL DEFAULT 'HELD', created_at VARCHAR(50) NOT NULL,
+      INDEX idx_split_allocation (split_id,status)
+    );
+
+    CREATE TABLE IF NOT EXISTS merchant_reserves (
+      id VARCHAR(64) PRIMARY KEY, merchant_id VARCHAR(64) NOT NULL, amount BIGINT NOT NULL,
+      reason VARCHAR(255) NOT NULL, status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE', release_at VARCHAR(50),
+      created_by VARCHAR(64), released_by VARCHAR(64), created_at VARCHAR(50) NOT NULL, released_at VARCHAR(50),
+      INDEX idx_reserve_merchant (merchant_id,status,release_at)
+    );
+
+    CREATE TABLE IF NOT EXISTS reconciliation_schedules (
+      id VARCHAR(64) PRIMARY KEY, workspace_id VARCHAR(64) CHARACTER SET utf8mb3 NOT NULL, merchant_id VARCHAR(64) NOT NULL,
+      frequency VARCHAR(20) NOT NULL, next_run_at VARCHAR(50) NOT NULL, is_active TINYINT NOT NULL DEFAULT 1,
+      created_by VARCHAR(64), created_at VARCHAR(50) NOT NULL, updated_at VARCHAR(50) NOT NULL,
+      UNIQUE KEY idx_reconciliation_schedule (merchant_id)
     );
 
     CREATE TABLE IF NOT EXISTS reconciliation_runs (
@@ -228,6 +312,13 @@ export async function initDatabase() {
       details_json JSON, resolution_status VARCHAR(20) NOT NULL DEFAULT 'OPEN', created_at VARCHAR(50) NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS notification_rules (
+      id VARCHAR(64) PRIMARY KEY, workspace_id VARCHAR(64) CHARACTER SET utf8mb3 NOT NULL, event_type VARCHAR(50) NOT NULL,
+      channel_ids_json JSON NOT NULL, mute_start VARCHAR(5), mute_end VARCHAR(5), is_active TINYINT NOT NULL DEFAULT 1,
+      created_by VARCHAR(64), created_at VARCHAR(50) NOT NULL, updated_at VARCHAR(50) NOT NULL,
+      INDEX idx_notification_rule (workspace_id,event_type,is_active)
+    );
+
     CREATE TABLE IF NOT EXISTS notification_channels (
       id VARCHAR(64) PRIMARY KEY, type VARCHAR(20) NOT NULL, name VARCHAR(100) NOT NULL,
       config_json JSON NOT NULL, is_active TINYINT NOT NULL DEFAULT 1, created_at VARCHAR(50) NOT NULL
@@ -237,6 +328,12 @@ export async function initDatabase() {
       id VARCHAR(64) PRIMARY KEY, channel_id VARCHAR(64), event_type VARCHAR(50) NOT NULL,
       dedup_key VARCHAR(255), status VARCHAR(20) NOT NULL, payload_json JSON,
       error TEXT, created_at VARCHAR(50) NOT NULL, sent_at VARCHAR(50)
+    );
+
+    CREATE TABLE IF NOT EXISTS api_version_usage (
+      id VARCHAR(64) PRIMARY KEY, merchant_id VARCHAR(64), api_version VARCHAR(20) NOT NULL,
+      method VARCHAR(10) NOT NULL, path VARCHAR(255) NOT NULL, created_at VARCHAR(50) NOT NULL,
+      INDEX idx_api_version_usage (api_version,created_at)
     );
 
     CREATE TABLE IF NOT EXISTS api_nonces (
@@ -287,11 +384,31 @@ export async function initDatabase() {
       CONSTRAINT fk_link_merchant FOREIGN KEY (merchant_id) REFERENCES merchants(id)
     );
 
+    CREATE TABLE IF NOT EXISTS approval_policies (
+      id VARCHAR(64) PRIMARY KEY, workspace_id VARCHAR(64) CHARACTER SET utf8mb3 NOT NULL, action_type VARCHAR(50) NOT NULL,
+      minimum_amount BIGINT NOT NULL DEFAULT 0, required_approvers INT NOT NULL DEFAULT 1, approver_roles_json JSON NOT NULL,
+      distinct_requester TINYINT NOT NULL DEFAULT 1, is_active TINYINT NOT NULL DEFAULT 1, created_at VARCHAR(50) NOT NULL, updated_at VARCHAR(50) NOT NULL,
+      UNIQUE KEY idx_policy_workspace_action (workspace_id,action_type,minimum_amount), INDEX idx_policy_lookup (workspace_id,action_type,is_active)
+    );
+
+    CREATE TABLE IF NOT EXISTS approval_decisions (
+      id VARCHAR(64) PRIMARY KEY, approval_id VARCHAR(64) NOT NULL, decided_by VARCHAR(64) NOT NULL,
+      decision VARCHAR(20) NOT NULL, notes TEXT, created_at VARCHAR(50) NOT NULL,
+      UNIQUE KEY idx_approval_actor (approval_id,decided_by), INDEX idx_approval_decision (approval_id,decision)
+    );
+
     CREATE TABLE IF NOT EXISTS approvals (
       id VARCHAR(64) PRIMARY KEY, action_type VARCHAR(50) NOT NULL, target_type VARCHAR(50) NOT NULL,
       target_id VARCHAR(64) NOT NULL, requested_by VARCHAR(64) NOT NULL, approved_by VARCHAR(64),
       status VARCHAR(20) NOT NULL DEFAULT 'PENDING', payload_json JSON, decision_notes TEXT,
       created_at VARCHAR(50) NOT NULL, decided_at VARCHAR(50)
+    );
+
+    CREATE TABLE IF NOT EXISTS risk_lists (
+      id VARCHAR(64) PRIMARY KEY, workspace_id VARCHAR(64) CHARACTER SET utf8mb3 NOT NULL, merchant_id VARCHAR(64),
+      list_type VARCHAR(10) NOT NULL, subject_type VARCHAR(30) NOT NULL, subject_hash VARCHAR(64) NOT NULL,
+      label VARCHAR(255), expires_at VARCHAR(50), created_by VARCHAR(64), created_at VARCHAR(50) NOT NULL,
+      UNIQUE KEY idx_risk_list_subject (workspace_id,merchant_id,list_type,subject_type,subject_hash), INDEX idx_risk_list_lookup (workspace_id,merchant_id,subject_type,subject_hash)
     );
 
     CREATE TABLE IF NOT EXISTS risk_rules (
@@ -306,6 +423,13 @@ export async function initDatabase() {
       score INT NOT NULL, decision VARCHAR(20) NOT NULL, signals_json JSON NOT NULL,
       review_status VARCHAR(20), reviewed_by VARCHAR(64), created_at VARCHAR(50) NOT NULL,
       INDEX idx_risk_events (merchant_id, created_at)
+    );
+
+    CREATE TABLE IF NOT EXISTS provider_circuit_policies (
+      provider VARCHAR(50) PRIMARY KEY, failure_threshold INT NOT NULL DEFAULT 5, recovery_seconds INT NOT NULL DEFAULT 60,
+      minimum_samples INT NOT NULL DEFAULT 5, degraded_success_rate DOUBLE NOT NULL DEFAULT 90,
+      circuit_state VARCHAR(20) NOT NULL DEFAULT 'CLOSED', failure_count INT NOT NULL DEFAULT 0,
+      opened_at VARCHAR(50), open_until VARCHAR(50), updated_by VARCHAR(64), updated_at VARCHAR(50) NOT NULL
     );
 
     CREATE TABLE IF NOT EXISTS provider_metrics (
@@ -393,7 +517,7 @@ export async function initDatabase() {
     CREATE TABLE IF NOT EXISTS admin_recovery_codes (
       id VARCHAR(64) PRIMARY KEY, user_id VARCHAR(64) NOT NULL, code_hash VARCHAR(255) NOT NULL,
       used_at VARCHAR(50), created_at VARCHAR(50) NOT NULL,
-      CONSTRAINT fk_recovery_user FOREIGN KEY (user_id) REFERENCES admin_users(id)
+      CONSTRAINT fk_admin_recovery_user FOREIGN KEY (user_id) REFERENCES admin_users(id)
     );
 
     CREATE TABLE IF NOT EXISTS in_app_notifications (
@@ -602,6 +726,13 @@ export async function initDatabase() {
       CONSTRAINT fk_oc_app FOREIGN KEY (application_id) REFERENCES onboarding_applications(id) ON DELETE CASCADE
     );
 
+    CREATE TABLE IF NOT EXISTS inspection_tickets (
+      id VARCHAR(64) PRIMARY KEY, merchant_id VARCHAR(64) CHARACTER SET utf8mb3 NOT NULL, payment_id VARCHAR(64), dispute_id VARCHAR(64), webhook_delivery_id VARCHAR(64),
+      title VARCHAR(160) NOT NULL, status VARCHAR(20) NOT NULL DEFAULT 'OPEN', priority VARCHAR(20) NOT NULL DEFAULT 'NORMAL', notes TEXT,
+      created_by VARCHAR(64), assigned_to VARCHAR(64), created_at VARCHAR(50) NOT NULL, updated_at VARCHAR(50) NOT NULL,
+      INDEX idx_ticket_merchant (merchant_id, updated_at), CONSTRAINT fk_ticket_merchant FOREIGN KEY (merchant_id) REFERENCES merchants(id)
+    );
+
     CREATE TABLE IF NOT EXISTS merchant_payment_methods (
       merchant_id VARCHAR(64) NOT NULL, payment_method VARCHAR(50) NOT NULL,
       is_enabled TINYINT NOT NULL DEFAULT 0, fee_bearer VARCHAR(20) NOT NULL DEFAULT 'MERCHANT',
@@ -615,6 +746,42 @@ export async function initDatabase() {
     );
   `);
 
+  /* ── Workspace migration (idempotent; legacy data remains available in one default tenant) ── */
+  const hasColumn=async(table,column)=>Boolean(await db.get('SELECT 1 found FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=? AND COLUMN_NAME=?',[table,column]));
+  if(!await hasColumn('merchants','workspace_id'))await db.exec('ALTER TABLE merchants ADD COLUMN workspace_id VARCHAR(64) CHARACTER SET utf8mb3 NULL, ADD INDEX idx_merchant_workspace (workspace_id,created_at)');
+  if(!await hasColumn('admin_sessions','active_workspace_id'))await db.exec('ALTER TABLE admin_sessions ADD COLUMN active_workspace_id VARCHAR(64) CHARACTER SET utf8mb3 NULL');
+  if(!await hasColumn('admin_users','email_verified_at'))await db.exec('ALTER TABLE admin_users ADD COLUMN email_verified_at VARCHAR(50) NULL');
+  if(!await hasColumn('admin_sessions','step_up_at'))await db.exec('ALTER TABLE admin_sessions ADD COLUMN step_up_at VARCHAR(50) NULL');
+  if(!await hasColumn('merchants','production_activated_at'))await db.exec('ALTER TABLE merchants ADD COLUMN production_activated_at VARCHAR(50) NULL');
+  if(!await hasColumn('onboarding_applications','workspace_id'))await db.exec('ALTER TABLE onboarding_applications ADD COLUMN workspace_id VARCHAR(64) CHARACTER SET utf8mb3 NULL, ADD INDEX idx_onb_workspace (workspace_id,status,updated_at)');
+  if(!await hasColumn('onboarding_applications','registration_number'))await db.exec('ALTER TABLE onboarding_applications ADD COLUMN registration_number VARCHAR(100) NULL, ADD COLUMN tax_number VARCHAR(100) NULL, ADD COLUMN business_address TEXT NULL, ADD COLUMN website VARCHAR(255) NULL, ADD COLUMN rejection_reason TEXT NULL');
+  if(!await hasColumn('onboarding_applications','beneficial_owners_json'))await db.exec('ALTER TABLE onboarding_applications ADD COLUMN beneficial_owners_json JSON NULL');
+  if(!await hasColumn('approvals','workspace_id'))await db.exec('ALTER TABLE approvals ADD COLUMN workspace_id VARCHAR(64) CHARACTER SET utf8mb3 NULL, ADD COLUMN merchant_id VARCHAR(64) CHARACTER SET utf8mb3 NULL, ADD COLUMN amount BIGINT NOT NULL DEFAULT 0, ADD COLUMN required_approvers INT NOT NULL DEFAULT 1, ADD COLUMN approved_count INT NOT NULL DEFAULT 0, ADD INDEX idx_approval_workspace (workspace_id,status,created_at)');
+  if(!await hasColumn('disputes','provider_case_id'))await db.exec("ALTER TABLE disputes ADD COLUMN provider_case_id VARCHAR(100) NULL, ADD COLUMN reason_code VARCHAR(50) NULL, ADD COLUMN disputed_amount BIGINT NULL, ADD COLUMN response_due_at VARCHAR(50) NULL, ADD COLUMN assigned_to VARCHAR(64) NULL, ADD COLUMN response_template TEXT NULL, ADD COLUMN sla_status VARCHAR(20) NOT NULL DEFAULT 'ON_TRACK', ADD INDEX idx_dispute_deadline (status,response_due_at)");
+  if(!await hasColumn('dispute_evidence','checklist_item'))await db.exec("ALTER TABLE dispute_evidence ADD COLUMN checklist_item VARCHAR(100) NULL, ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'SUBMITTED'");
+  if(!await hasColumn('risk_rules','workspace_id'))await db.exec('ALTER TABLE risk_rules ADD COLUMN workspace_id VARCHAR(64) CHARACTER SET utf8mb3 NULL, ADD COLUMN merchant_id VARCHAR(64) NULL, ADD COLUMN description TEXT NULL, ADD COLUMN priority INT NOT NULL DEFAULT 100, ADD INDEX idx_risk_rule_scope (workspace_id,merchant_id,is_active,priority)');
+  if(!await hasColumn('ledger_transactions','entry_hash'))await db.exec('ALTER TABLE ledger_transactions ADD COLUMN entry_hash VARCHAR(64) NULL, ADD COLUMN posted_at VARCHAR(50) NULL');
+  if(!await hasColumn('provider_metrics','operation'))await db.exec('ALTER TABLE provider_metrics ADD COLUMN operation VARCHAR(50) NULL, ADD COLUMN http_status INT NULL');
+  if(!await hasColumn('notification_channels','workspace_id'))await db.exec('ALTER TABLE notification_channels ADD COLUMN workspace_id VARCHAR(64) CHARACTER SET utf8mb3 NULL, ADD COLUMN updated_at VARCHAR(50) NULL, ADD INDEX idx_notification_channel_scope (workspace_id,is_active)');
+  if(!await hasColumn('retention_policies','workspace_id'))await db.exec('ALTER TABLE retention_policies ADD COLUMN workspace_id VARCHAR(64) CHARACTER SET utf8mb3 NULL, DROP INDEX idx_retention_resource, ADD UNIQUE KEY idx_retention_scope (workspace_id,resource)');
+  if(!await hasColumn('audit_exports','manifest_json'))await db.exec('ALTER TABLE audit_exports ADD COLUMN workspace_id VARCHAR(64) CHARACTER SET utf8mb3 NULL, ADD COLUMN manifest_json JSON NULL');
+  if(!await hasColumn('webhook_deliveries','replay_of'))await db.exec('ALTER TABLE webhook_deliveries ADD COLUMN replay_of VARCHAR(64) NULL, ADD COLUMN replay_reason VARCHAR(255) NULL');
+  if(!await hasColumn('merchants','webhook_secret_previous'))await db.exec('ALTER TABLE merchants ADD COLUMN webhook_secret_previous VARCHAR(255) NULL, ADD COLUMN webhook_secret_overlap_ends_at VARCHAR(50) NULL');
+  if(!await hasColumn('notification_events','attempt_count'))await db.exec('ALTER TABLE notification_events ADD COLUMN attempt_count INT NOT NULL DEFAULT 0, ADD COLUMN next_retry_at VARCHAR(50) NULL, ADD COLUMN response_status INT NULL');
+  if(!await hasColumn('recurring_plans','grace_days'))await db.exec("ALTER TABLE recurring_plans ADD COLUMN grace_days INT NOT NULL DEFAULT 3, ADD COLUMN retry_interval_hours INT NOT NULL DEFAULT 24, ADD COLUMN proration_policy VARCHAR(20) NOT NULL DEFAULT 'NONE'");
+  if(!await hasColumn('recurring_subscriptions','vault_method_id'))await db.exec('ALTER TABLE recurring_subscriptions ADD COLUMN vault_method_id VARCHAR(64) NULL, ADD COLUMN payment_link_id VARCHAR(64) NULL');
+  if(!await hasColumn('billing_cycles','payment_id'))await db.exec('ALTER TABLE billing_cycles ADD COLUMN payment_id VARCHAR(64) NULL, ADD COLUMN idempotency_key VARCHAR(160) NULL, ADD COLUMN next_retry_at VARCHAR(50) NULL, ADD COLUMN failure_reason TEXT NULL, ADD UNIQUE KEY idx_billing_cycle_period (subscription_id,period_start)');
+  if(!await hasColumn('provider_incidents','public_message'))await db.exec('ALTER TABLE provider_incidents ADD COLUMN public_message TEXT NULL, ADD COLUMN affected_methods_json JSON NULL, ADD COLUMN public_status TINYINT NOT NULL DEFAULT 0, ADD COLUMN updated_at VARCHAR(50) NULL');
+  if(!await hasColumn('reconciliation_runs','merchant_id'))await db.exec('ALTER TABLE reconciliation_runs ADD COLUMN merchant_id VARCHAR(64) NULL, ADD COLUMN workspace_id VARCHAR(64) CHARACTER SET utf8mb3 NULL, ADD COLUMN triggered_by VARCHAR(64) NULL, ADD INDEX idx_rec_scope (workspace_id,merchant_id,created_at)');
+  if(!await hasColumn('reconciliation_items','assigned_to'))await db.exec('ALTER TABLE reconciliation_items ADD COLUMN assigned_to VARCHAR(64) NULL, ADD COLUMN resolution_notes TEXT NULL, ADD COLUMN resolved_by VARCHAR(64) NULL, ADD COLUMN resolved_at VARCHAR(50) NULL');
+  await db.exec("UPDATE risk_rules SET workspace_id='ws_legacy_default' WHERE workspace_id IS NULL");
+  await db.exec("UPDATE approvals a LEFT JOIN merchants m ON m.id=a.merchant_id SET a.workspace_id=COALESCE(m.workspace_id,'ws_legacy_default') WHERE a.workspace_id IS NULL");
+  const policyWorkspaceRows=await db.all('SELECT id FROM workspaces');for(const workspace of policyWorkspaceRows)for(const [action,amount,count,roles] of [['SETTLEMENT',0,1,['owner','finance']],['REFUND',1000000,1,['owner','finance']],['PAYOUT_DESTINATION',0,1,['owner']],['API_KEY_ROTATION',0,1,['owner','developer']]])await db.run('INSERT IGNORE INTO approval_policies (id,workspace_id,action_type,minimum_amount,required_approvers,approver_roles_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?)',[id('apol'),workspace.id,action,amount,count,JSON.stringify(roles),now(),now()]);
+  await db.exec('UPDATE onboarding_applications o JOIN merchants m ON m.id=o.merchant_id SET o.workspace_id=m.workspace_id WHERE o.workspace_id IS NULL');
+  const legacyWorkspace='ws_legacy_default',stamp=now();
+  await db.run('INSERT IGNORE INTO workspaces (id,name,slug,created_at,updated_at) VALUES (?,?,?,?,?)',[legacyWorkspace,'EvoPay Legacy Workspace','legacy',stamp,stamp]);
+  await db.run('UPDATE merchants SET workspace_id=? WHERE workspace_id IS NULL',[legacyWorkspace]);
+
   /* ── Seed admin ── */
   const adminExists = await db.get('SELECT id, username FROM admin_users LIMIT 1');
   if (!adminExists && process.env.ADMIN_PASSWORD) {
@@ -626,14 +793,17 @@ export async function initDatabase() {
   if (adminExists && !adminExists.username) {
     await db.run('UPDATE admin_users SET username=? WHERE id=?', [process.env.ADMIN_USERNAME || 'admin', adminExists.id]);
   }
+  const legacyUsers=await db.all('SELECT id,role FROM admin_users');
+  for(const user of legacyUsers)await db.run('INSERT IGNORE INTO workspace_members (workspace_id,user_id,role,created_at) VALUES (?,?,?,?)',[legacyWorkspace,user.id,user.role,now()]);
+  await db.run('UPDATE admin_sessions SET active_workspace_id=? WHERE active_workspace_id IS NULL',[legacyWorkspace]);
 
   /* ── Seed demo merchant (non-production) ── */
   const demoKey = process.env.DEMO_MERCHANT_API_KEY || 'np_demo_topup_please_change';
   const demoExists = await db.get('SELECT id FROM merchants WHERE id = ?', ['m_demo_topup']);
   if (process.env.NODE_ENV !== 'production' && !demoExists) {
     await db.run(
-      'INSERT INTO merchants (id,name,api_key_hash,callback_url,created_at) VALUES (?,?,?,?,?)',
-      ['m_demo_topup', 'Demo Topup Store', hashApiKey(demoKey), null, now()]
+      'INSERT INTO merchants (id,name,api_key_hash,callback_url,created_at,workspace_id) VALUES (?,?,?,?,?,?)',
+      ['m_demo_topup', 'Demo Topup Store', hashApiKey(demoKey), null, now(), legacyWorkspace]
     );
   }
 

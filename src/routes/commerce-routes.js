@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { authorize } from '../middleware/authorization.js';
 import { requirePermission } from '../middleware/permissions.js';
 
-export default function commerceRoutes(links, payments, commerce, jobs) {
+export default function commerceRoutes(links, payments, commerce, jobs, vault) {
   const router = Router(); const auth = authorize();
   router.get('/links', auth, requirePermission('merchants:read'), async (req, res, next) => { try { res.json({ data: await links.list(req.query.merchant_id || 'm_demo_topup') }); } catch (error) { next(error); } });
   router.post('/links', auth, requirePermission('merchants:write'), async (req, res, next) => { try { res.status(201).json({ data: await links.create(req.body.merchant_id || 'm_demo_topup', req.body) }); } catch (error) { next(error); } });
@@ -22,5 +22,8 @@ export default function commerceRoutes(links, payments, commerce, jobs) {
   router.get('/public/links/:slug', async (req, res, next) => { try { const data = await links.get(req.params.slug); if (!data) return res.status(404).json({ error: { message: 'Payment link tidak ditemukan.' } }); res.json({ data }); } catch (error) { next(error); } });
   router.post('/public/links/:slug/checkout', async (req, res, next) => { try { res.status(201).json({ data: await links.checkout(req.params.slug, req.body, payments) }); } catch (error) { next(error); } });
   router.get('/public/portal/:token', async (req, res, next) => { try { const data = await commerce.portalInvoice(req.params.token); return data ? res.json({ data }) : res.status(404).json({ error: { message: 'Portal tidak ditemukan atau tautan tidak valid.' } }); } catch (error) { next(error); } });
+  router.get('/customers/:customerId/payment-methods', auth, requirePermission('customers:read'), async(req,res,next)=>{try{res.json({data:await vault.list(req.admin.workspace_id,req.query.merchant_id,req.params.customerId,req.admin.user_id)})}catch(error){next(error)}});
+  router.post('/customers/:customerId/payment-methods', auth, requirePermission('customers:write'), async(req,res,next)=>{try{res.status(201).json({data:await vault.store(req.admin.workspace_id,req.body.merchant_id,{...req.body,customer_id:req.params.customerId},req.admin.user_id)})}catch(error){next(error)}});
+  router.delete('/customers/:customerId/payment-methods/:methodId', auth, requirePermission('customers:write'), async(req,res,next)=>{try{res.json({data:await vault.revoke(req.admin.workspace_id,req.query.merchant_id,req.params.methodId,req.admin.user_id)})}catch(error){next(error)}});
   return router;
 }

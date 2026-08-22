@@ -1,75 +1,16 @@
 import crypto from 'node:crypto';
-import db, { id, now } from '../database.js';
-
-const error = (message, status) => Object.assign(new Error(message), { status });
-const transitions = {
-  DRAFT: ['SUBMITTED'],
-  SUBMITTED: ['IN_REVIEW', 'REVISION_REQUIRED', 'APPROVED', 'REJECTED'],
-  IN_REVIEW: ['REVISION_REQUIRED', 'APPROVED', 'REJECTED'],
-  REVISION_REQUIRED: ['SUBMITTED']
-};
-
-export class OnboardingService {
-  async get(merchantId) {
-    return await db.get('SELECT * FROM onboarding_applications WHERE merchant_id=?', [merchantId]) || null;
-  }
-
-  async save(merchantId, input) {
-    const current = await this.get(merchantId);
-    if (current && !['DRAFT', 'REVISION_REQUIRED'].includes(current.status)) {
-      throw error('Aplikasi sedang ditinjau dan tidak dapat diubah.', 409);
-    }
-
-    const timestamp = now();
-    if (!current) {
-      await db.run(
-        'INSERT INTO onboarding_applications (id,merchant_id,legal_name,business_type,bank_name,bank_account_last4,bank_owner_name,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?)',
-        [id('kyc'), merchantId, input.legal_name?.trim(), input.business_type?.trim(), input.bank_name?.trim(), String(input.bank_account_number || '').slice(-4) || null, input.bank_owner_name?.trim(), timestamp, timestamp]
-      );
-    } else {
-      await db.run(
-        'UPDATE onboarding_applications SET legal_name=?,business_type=?,bank_name=?,bank_account_last4=?,bank_owner_name=?,revision=revision+1,updated_at=? WHERE id=?',
-        [input.legal_name?.trim(), input.business_type?.trim(), input.bank_name?.trim(), String(input.bank_account_number || '').slice(-4) || null, input.bank_owner_name?.trim(), timestamp, current.id]
-      );
-    }
-    return this.get(merchantId);
-  }
-
-  async submit(merchantId) {
-    const app = await this.get(merchantId);
-    if (!app || !app.legal_name || !app.business_type || !app.bank_owner_name) {
-      throw error('Data legal, jenis usaha, dan pemilik rekening wajib lengkap.', 422);
-    }
-    await this.transition(app, 'SUBMITTED');
-    await db.run('UPDATE onboarding_applications SET submitted_at=? WHERE id=?', [now(), app.id]);
-    await db.run('UPDATE merchants SET onboarding_status=? WHERE id=?', ['SUBMITTED', merchantId]);
-    return this.get(merchantId);
-  }
-
-  async review(applicationId, { status, notes, reviewerId, riskTier = 'STANDARD', transactionLimit = 10000000 }) {
-    const app = await db.get('SELECT * FROM onboarding_applications WHERE id=?', [applicationId]);
-    if (!app) throw error('Aplikasi tidak ditemukan.', 404);
-    await this.transition(app, status);
-    const timestamp = now();
-    await db.run('UPDATE onboarding_applications SET status=?,reviewer_id=?,review_notes=?,risk_tier=?,reviewed_at=?,updated_at=? WHERE id=?', [status, reviewerId, notes || null, riskTier, timestamp, timestamp, app.id]);
-    await db.run('UPDATE merchants SET onboarding_status=?,risk_tier=?,transaction_limit=? WHERE id=?', [status, riskTier, transactionLimit, app.merchant_id]);
-    return this.get(app.merchant_id);
-  }
-
-  async addDocument(applicationId, { document_type, file_name, content }) {
-    const app = await db.get('SELECT id FROM onboarding_applications WHERE id=?', [applicationId]);
-    if (!app) throw error('Aplikasi tidak ditemukan.', 404);
-    if (!document_type || !file_name || !content) throw error('Metadata dan isi dokumen wajib diisi.', 422);
-    const checksum = crypto.createHash('sha256').update(String(content)).digest('hex');
-    const doc = { id: id('doc'), applicationId, document_type, file_name, storage_key: `sandbox://${applicationId}/${checksum}`, checksum, created_at: now() };
-    await db.run('INSERT INTO kyc_documents (id,application_id,document_type,file_name,storage_key,checksum,created_at) VALUES (?,?,?,?,?,?,?)', [doc.id, doc.applicationId, doc.document_type, doc.file_name, doc.storage_key, doc.checksum, doc.created_at]);
-    return doc;
-  }
-
-  async transition(app, next) {
-    if (!(transitions[app.status] || []).includes(next)) {
-      throw error(`Transisi ${app.status} ke ${next} tidak diizinkan.`, 409);
-    }
-    await db.run('UPDATE onboarding_applications SET status=?,updated_at=? WHERE id=?', [next, now(), app.id]);
-  }
+import db,{id,now} from '../database.js';
+const fail=(message,status=422)=>{throw Object.assign(new Error(message),{status});};
+const transitions={DRAFT:['SUBMITTED'],SUBMITTED:['IN_REVIEW','REVISION_REQUIRED','APPROVED','REJECTED'],IN_REVIEW:['REVISION_REQUIRED','APPROVED','REJECTED'],REVISION_REQUIRED:['SUBMITTED']};
+const TYPES=new Set(['SOLE_PROPRIETOR','COMPANY','NON_PROFIT','GOVERNMENT']);
+export class OnboardingService{
+ async assertMerchant(merchantId,workspaceId){const m=await db.get('SELECT * FROM merchants WHERE id=? AND workspace_id=?',[merchantId,workspaceId]);if(!m)fail('Project tidak ditemukan.',404);return m;}
+ async get(merchantId,workspaceId){await this.assertMerchant(merchantId,workspaceId);const app=await db.get('SELECT * FROM onboarding_applications WHERE merchant_id=? AND workspace_id=?',[merchantId,workspaceId]);if(!app)return null;app.beneficial_owners=JSON.parse(app.beneficial_owners_json||'[]');app.documents=await db.all('SELECT id,document_type,file_name,status,review_notes,created_at FROM kyc_documents WHERE application_id=? ORDER BY created_at',[app.id]);return app;}
+ async save(merchantId,workspaceId,input){await this.assertMerchant(merchantId,workspaceId);const current=await this.get(merchantId,workspaceId);if(current&&!['DRAFT','REVISION_REQUIRED'].includes(current.status))fail('Aplikasi sedang ditinjau dan tidak dapat diubah.',409);if(!TYPES.has(input.business_type))fail('Jenis badan usaha tidak valid.');const owners=Array.isArray(input.beneficial_owners)?input.beneficial_owners.filter(x=>x.name?.trim()).map(x=>({name:x.name.trim(),ownership:Number(x.ownership)||0,id_type:x.id_type||null,id_last4:String(x.id_number||'').slice(-4)||null})):[];if(owners.some(x=>x.ownership<0||x.ownership>100)||owners.reduce((n,x)=>n+x.ownership,0)>100)fail('Data beneficial owner tidak valid.');const t=now(),values=[input.legal_name?.trim(),input.business_type,input.registration_number?.trim()||null,input.tax_number?.trim()||null,input.business_address?.trim()||null,input.website?.trim()||null,input.bank_name?.trim(),String(input.bank_account_number||'').slice(-4)||null,input.bank_owner_name?.trim(),JSON.stringify(owners),t];if(!current)await db.run('INSERT INTO onboarding_applications (id,merchant_id,workspace_id,legal_name,business_type,registration_number,tax_number,business_address,website,bank_name,bank_account_last4,bank_owner_name,beneficial_owners_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',[id('kyc'),merchantId,workspaceId,...values]);else await db.run('UPDATE onboarding_applications SET legal_name=?,business_type=?,registration_number=?,tax_number=?,business_address=?,website=?,bank_name=?,bank_account_last4=?,bank_owner_name=?,beneficial_owners_json=?,revision=revision+1,updated_at=? WHERE id=?',[...values,current.id]);return this.get(merchantId,workspaceId);}
+ async submit(merchantId,workspaceId){const app=await this.get(merchantId,workspaceId);if(!app?.legal_name||!app.registration_number||!app.tax_number||!app.business_address||!app.bank_owner_name)fail('Data legal, registrasi, pajak, alamat, dan rekening wajib lengkap.');if(!app.documents.some(x=>x.document_type==='BUSINESS_REGISTRATION')||!app.documents.some(x=>x.document_type==='BANK_PROOF'))fail('Dokumen registrasi usaha dan bukti rekening wajib tersedia.');await this.transition(app,'SUBMITTED');await db.run('UPDATE onboarding_applications SET submitted_at=? WHERE id=?',[now(),app.id]);await db.run("UPDATE merchants SET onboarding_status='SUBMITTED',production_activated_at=NULL WHERE id=?",[merchantId]);return this.get(merchantId,workspaceId);}
+ async review(applicationId,workspaceId,{status,notes,rejection_reason,reviewerId,riskTier='STANDARD',transactionLimit=10000000}){const app=await db.get('SELECT * FROM onboarding_applications WHERE id=? AND workspace_id=?',[applicationId,workspaceId]);if(!app)fail('Aplikasi tidak ditemukan.',404);if(['REJECTED','REVISION_REQUIRED'].includes(status)&&!(rejection_reason||notes)?.trim())fail('Alasan review wajib diisi.');await this.transition(app,status);const t=now();await db.run('UPDATE onboarding_applications SET status=?,reviewer_id=?,review_notes=?,rejection_reason=?,risk_tier=?,reviewed_at=?,updated_at=? WHERE id=?',[status,reviewerId,notes||null,rejection_reason||null,riskTier,t,t,app.id]);await db.run('UPDATE merchants SET onboarding_status=?,risk_tier=?,transaction_limit=?,production_activated_at=NULL WHERE id=?',[status,riskTier,transactionLimit,app.merchant_id]);return this.get(app.merchant_id,workspaceId);}
+ async addDocument(applicationId,workspaceId,{document_type,file_name,storage_key,checksum}){const app=await db.get('SELECT id,status FROM onboarding_applications WHERE id=? AND workspace_id=?',[applicationId,workspaceId]);if(!app)fail('Aplikasi tidak ditemukan.',404);if(!['DRAFT','REVISION_REQUIRED'].includes(app.status))fail('Dokumen tidak dapat diubah saat review.',409);if(!document_type||!file_name||!storage_key||!checksum||!/^[a-f0-9]{64}$/i.test(checksum))fail('Metadata storage dan checksum SHA-256 wajib diisi.');if(storage_key.startsWith('sandbox://')&&process.env.NODE_ENV==='production')fail('Sandbox storage tidak tersedia di production.',409);const doc={id:id('doc'),applicationId,document_type,file_name:file_name.slice(0,255),storage_key,checksum:checksum.toLowerCase(),created_at:now()};await db.run('INSERT INTO kyc_documents (id,application_id,document_type,file_name,storage_key,checksum,created_at) VALUES (?,?,?,?,?,?,?)',[doc.id,doc.applicationId,doc.document_type,doc.file_name,doc.storage_key,doc.checksum,doc.created_at]);return doc;}
+ async activationStatus(merchantId,workspaceId,userId){const merchant=await this.assertMerchant(merchantId,workspaceId),user=await db.get('SELECT email_verified_at,totp_enabled FROM admin_users WHERE id=?',[userId]);const checks={email_verified:Boolean(user?.email_verified_at),totp_enabled:Boolean(user?.totp_enabled),kyc_approved:merchant.onboarding_status==='APPROVED',callback_configured:Boolean(merchant.callback_url)};return{eligible:Object.values(checks).every(Boolean),active:Boolean(merchant.production_activated_at),checks};}
+ async activate(merchantId,workspaceId,userId,stepUpAt){const status=await this.activationStatus(merchantId,workspaceId,userId);if(!status.eligible)fail('Production activation membutuhkan email terverifikasi, 2FA, KYC approved, dan callback URL.',409);if(!stepUpAt||Date.now()-new Date(stepUpAt).getTime()>600000)fail('Verifikasi 2FA ulang diperlukan.',403);await db.run('UPDATE merchants SET production_activated_at=? WHERE id=? AND workspace_id=?',[now(),merchantId,workspaceId]);return this.activationStatus(merchantId,workspaceId,userId);}
+ async transition(app,next){if(!(transitions[app.status]||[]).includes(next))fail(`Transisi ${app.status} ke ${next} tidak diizinkan.`,409);await db.run('UPDATE onboarding_applications SET status=?,updated_at=? WHERE id=?',[next,now(),app.id]);}
 }

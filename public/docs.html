@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/docs.css?v=20260820-fintech-redesign">
+  <link rel="stylesheet" href="/docs.css?v=20260822-developer-command">
 </head>
 <body>
   <header>
@@ -37,13 +37,12 @@
     </aside>
     <article>
       <section class="hero" id="quickstart">
-        <span class="pill">API v1 · LIVE READY</span>
-        <h1>Build payments.<br><em>Ship with confidence.</em></h1>
-        <p>Integrasikan website top-up Anda ke EvoPay dengan API sederhana, idempotent, dan callback real-time.</p>
-        <div class="hero-actions">
-          <a class="primary" href="#create">Start integrating →</a>
-          <a class="secondary" href="/openapi.yaml">View OpenAPI</a>
-        </div>
+        <div class="hero-grid"></div><div class="hero-glow"></div>
+        <div class="hero-copy"><span class="pill"><i></i> API v1 · LIVE READY</span>
+        <h1>Payments that <em>feel effortless.</em></h1>
+        <p>Integrasikan checkout, webhook, dan rekonsiliasi secara aman. EvoPay memberi kontrol penuh pada setiap transaksi.</p>
+        <div class="hero-actions"><a class="primary" href="#create">Mulai integrasi <span>→</span></a><a class="secondary" href="/openapi.yaml">OpenAPI specification ↗</a></div></div>
+        <div class="hero-terminal"><div class="terminal-head"><span><i></i><i></i><i></i></span><b>evopay / status</b><em>LIVE</em></div><div class="terminal-body"><small>GET /api/v1/health</small><strong><i></i> Operational</strong><p>Latency <b>48ms</b> · API v1</p><div class="terminal-bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div></div>
       </section>
 
       <section id="authentication">
@@ -60,7 +59,7 @@ Idempotency-Key: order-10001</code></pre>
 
       <section id="methods">
         <span class="index">02 / PAYMENT METHODS</span>
-        <h2>26 channel pembayaran Tokopay.</h2>
+        <h2>26 channel pembayaran EvoPay.</h2>
         <p>Ambil metode merchant dengan <code>GET /api/v1/payment-methods</code>. Setiap item memuat biaya admin, penanggung biaya, settlement, minimum, maksimum, status aktif, dan kebutuhan pendaftaran.</p>
         <div class="note">
           <b>Virtual Account · 10 channel</b>

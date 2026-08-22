@@ -28,3 +28,7 @@ coverage/
 *_token
 .user.ini
 *.bak
+
+# Local exports and recordings
+Database/
+Record/

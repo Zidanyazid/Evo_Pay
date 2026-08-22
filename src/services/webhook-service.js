@@ -35,7 +35,7 @@ export class WebhookService {
     const startedAt = Date.now();
     try {
       await resolvePublicUrl(item.url);
-      const res = await fetch(item.url, { method: 'POST', redirect: 'manual', headers: { 'content-type': 'application/json', 'x-nexuspay-event': item.event_type, 'x-nexuspay-signature': `sha256=${item.signature}`, 'x-nexuspay-delivery': item.id }, body: item.payload_json, signal: AbortSignal.timeout(config.webhookTimeoutMs) });
+      const res = await fetch(item.url, { method: 'POST', redirect: 'manual', headers: { 'content-type': 'application/json', 'x-evopay-event': item.event_type, 'x-evopay-signature': `sha256=${item.signature}`, 'x-evopay-delivery': item.id }, body: item.payload_json, signal: AbortSignal.timeout(config.webhookTimeoutMs) });
       const responseBody = (await res.text().catch(() => '')).slice(0, 2000); const attempt = item.attempt_count + 1;
       await this.recordAttempt(item.id, attempt, res.status, responseBody, null, Date.now() - startedAt);
       if (res.ok) { await db.run('UPDATE webhook_deliveries SET status=?,attempt_count=?,response_code=?,response_body=?,last_error=NULL,delivered_at=?,updated_at=? WHERE id=?', ['DELIVERED', attempt, res.status, responseBody, now(), now(), item.id]); log('info', 'merchant_webhook_delivered', { delivery_id: item.id, payment_id: item.payment_id, attempt, status: res.status, duration_ms: Date.now() - startedAt }); }
@@ -44,14 +44,19 @@ export class WebhookService {
   }
   async recordAttempt(deliveryId, attempt, responseCode, responseBody, error, latencyMs) { await db.run('INSERT INTO webhook_attempts (id,delivery_id,attempt_number,response_code,response_body,error,latency_ms,created_at) VALUES (?,?,?,?,?,?,?,?)', [id('wha'), deliveryId, attempt, responseCode, responseBody, error, latencyMs, now()]); }
   async scheduleRetry(item, attempt, error, code, body) { const delay = config.webhookRetries[attempt]; const status = delay == null ? 'DEAD_LETTER' : 'RETRYING'; const next = delay == null ? null : new Date(Date.now() + delay * 1000).toISOString(); await db.run('UPDATE webhook_deliveries SET status=?,attempt_count=?,response_code=?,response_body=?,last_error=?,next_attempt_at=?,updated_at=? WHERE id=?', [status, attempt, code, body, error, next, now(), item.id]); }
-  async replay(deliveryId, overrideUrl = null) {
+  async replay(deliveryId, overrideUrl = null, reason = null) {
     const original = await db.get('SELECT * FROM webhook_deliveries WHERE id=?', [deliveryId]);
     if (!original) throw Object.assign(new Error('Delivery tidak ditemukan.'), { status: 404 });
+    if(!reason?.trim()||reason.trim().length>255)throw Object.assign(new Error('Alasan replay wajib diisi.'),{status:422});
     const payment = await db.get('SELECT p.*,m.webhook_secret,m.api_key_hash FROM payments p JOIN merchants m ON m.id=p.merchant_id WHERE p.id=?', [original.payment_id]);
     const timestamp = now(), newId = id('dlv'), secret = payment.webhook_secret || payment.api_key_hash;
     const signature = crypto.createHmac('sha256', secret).update(original.payload_json).digest('hex'); const target = overrideUrl ? validateOutboundUrl(overrideUrl).toString() : original.url;
     await db.run('INSERT INTO webhook_deliveries (id,payment_id,url,payload_json,status,event_type,next_attempt_at,signature,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?)', [newId, original.payment_id, target, original.payload_json, 'PENDING', original.event_type, timestamp, signature, timestamp, timestamp]);
+    await db.run('UPDATE webhook_deliveries SET replay_of=?,replay_reason=? WHERE id=?',[original.id,reason.trim(),newId]);
     void this.deliver(newId); return { queued: true, delivery_id: newId, replay_of: original.id };
   }
+  async verifyEndpoint(url){const target=validateOutboundUrl(url).toString();await resolvePublicUrl(target);const started=Date.now();const response=await fetch(target,{method:'HEAD',redirect:'manual',signal:AbortSignal.timeout(config.webhookTimeoutMs)});return{url:target,reachable:response.status<500,status:response.status,latency_ms:Date.now()-started};}
+  async rotateSecret(merchantId,overlapHours=24){const merchant=await db.get('SELECT webhook_secret FROM merchants WHERE id=?',[merchantId]);if(!merchant)throw Object.assign(new Error('Project tidak ditemukan.'),{status:404});const secret=`whsec_${crypto.randomBytes(32).toString('base64url')}`,ends=new Date(Date.now()+Math.min(168,Math.max(1,Number(overlapHours)||24))*3600000).toISOString();await db.run('UPDATE merchants SET webhook_secret_previous=webhook_secret,webhook_secret=?,webhook_secret_overlap_ends_at=? WHERE id=?',[secret,ends,merchantId]);return{secret,overlap_ends_at:ends};}
+  async preview(deliveryId){const row=await db.get('SELECT id,event_type,url,status,payload_json,signature,created_at FROM webhook_deliveries WHERE id=?',[deliveryId]);if(!row)return null;return{...row,payload:JSON.parse(row.payload_json.slice(0,65536)),payload_json:undefined,signature:`sha256=${row.signature.slice(0,8)}••••`};}
   async processDue() { const due = await db.all("SELECT id FROM webhook_deliveries WHERE status IN ('PENDING','RETRYING') AND (next_attempt_at IS NULL OR next_attempt_at<=?) LIMIT 25", [now()]); await Promise.allSettled(due.map((item) => this.deliver(item.id))); return due.length; }
 }

@@ -1,0 +1,7 @@
+import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';
+const service=fs.readFileSync(new URL('../src/services/billing-finance-service.js',import.meta.url),'utf8'),routes=fs.readFileSync(new URL('../src/routes/billing-finance-routes.js',import.meta.url),'utf8');
+test('CSV parser bounds file and rows and requires reconciliation columns',()=>{assert.match(service,/2_000_000/);assert.match(service,/10001/);for(const x of ['reference','amount','status'])assert.match(service,new RegExp(x));});
+test('reconciliation import is checksum deduplicated and tenant scoped',()=>{assert.match(service,/SELECT id FROM reconciliation_imports WHERE checksum=\?/);assert.match(service,/workspace_id/);assert.match(service,/merchant_id/);assert.match(service,/MISSING_LOCAL|STATUS_MISMATCH|AMOUNT_MISMATCH/);});
+test('imports do not mutate payment financial or status data',()=>{const block=service.slice(service.indexOf('async reconcile'),service.indexOf('async journalExport'));assert.doesNotMatch(block,/UPDATE payments/);});
+test('accounting exports provide journal fees and SHA256 integrity',()=>{assert.match(service,/journalExport/);assert.match(service,/feeTaxExport/);assert.match(service,/createHash\('sha256'/);assert.match(routes,/X-Content-SHA256/);});
+test('CSV cells are protected against spreadsheet formulas',()=>{assert.match(service,/\^\[=\+@-\]/);assert.match(service,/safeCell/);});

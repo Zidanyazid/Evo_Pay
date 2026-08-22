@@ -56,6 +56,7 @@ export class PaymentService {
     await db.transaction(async (tx) => {
       await tx.run('INSERT INTO payments (id,merchant_id,merchant_order_id,provider,provider_reference,payment_method,amount,total_amount,status,customer_name,customer_email,customer_phone,description,checkout_token,redirect_url,fee_amount,net_amount,fee_snapshot_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', [paymentId, merchant.id, input.order_id, selected.name, reference, input.payment_method, input.amount, total, 'PENDING', input.customer?.name || null, input.customer?.email || null, input.customer?.phone || null, input.description || null, checkoutToken, input.redirect_url || null, fee.fee, net, JSON.stringify(fee), timestamp, timestamp]);
       await tx.run('INSERT INTO payment_attempts (id,payment_id,provider,status,created_at,updated_at) VALUES (?,?,?,?,?,?)', [attemptId, paymentId, selected.name, 'CREATING', timestamp, timestamp]);
+      if(input.split_rule_id)await this.splits?.snapshot({id:paymentId,merchant_id:merchant.id,net_amount:net},input.split_rule_id,tx);
     });
 
     try {
@@ -82,7 +83,7 @@ export class PaymentService {
     const paidAt = status === 'PAID' ? now() : payment.paid_at;
     await db.run('UPDATE payments SET status=?,provider_transaction_id=COALESCE(?,provider_transaction_id),paid_at=?,provider_payload_json=COALESCE(?,provider_payload_json),updated_at=? WHERE id=?', [status, details.providerTransactionId || null, paidAt, details.raw ? JSON.stringify(details.raw) : null, now(), payment.id]);
     const updated = await db.get('SELECT * FROM payments WHERE id=?', [payment.id]);
-    if (updated.status === 'PAID') await this.finance?.capturePayment(updated);
+    if (updated.status === 'PAID') {await this.finance?.capturePayment(updated);await this.splits?.capture(updated,this.finance);}
     return updated;
   }
 

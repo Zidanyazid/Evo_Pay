@@ -29,7 +29,7 @@ Kloning repositori GitHub Anda ke dalam direktori `/var/www/`.
 
 ```bash
 cd /var/www
-sudo git clone https://github.com/Zidanyazid/Nexus_Pay.git evopay
+sudo git clone https://github.com/Zidanyazid/Evo_Pay.git evopay
 sudo chown -R $USER:$USER /var/www/evopay
 cd evopay
 ```
@@ -53,8 +53,12 @@ PORT=3000
 # Ganti dengan nama domain Anda (tanpa garis miring di akhir)
 APP_BASE_URL=https://pay.domainanda.com
 
-# Lokasi penyimpanan database SQLite
-DATABASE_PATH=./data/gateway.db
+# MySQL database
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_NAME=evopay
+DB_USER=evopay
+DB_PASSWORD=ganti-dengan-password-database-kuat
 
 # Kredensial Admin Dashboard
 ADMIN_USERNAME=admin
