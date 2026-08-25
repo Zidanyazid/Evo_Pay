@@ -1,0 +1,4 @@
+import crypto from 'node:crypto';
+export function verifyEvoPayWebhook(rawBody, signature, secret) { const expected = `sha256=${crypto.createHmac('sha256', secret).update(rawBody).digest('hex')}`; const actual = Buffer.from(signature || ''); const expectedBuffer = Buffer.from(expected); return actual.length === expectedBuffer.length && crypto.timingSafeEqual(actual, expectedBuffer); }
+export async function handlePaymentPaid({ rawBody, signature, deliveryId, secret, hasProcessed, processPayment, markProcessed }) { if (!verifyEvoPayWebhook(rawBody, signature, secret)) throw new Error('Webhook signature tidak valid.'); if (await hasProcessed(deliveryId)) return { duplicate: true }; const event = JSON.parse(rawBody); await processPayment(event.data); await markProcessed(deliveryId); // ponytail: replace these callbacks with your DB transaction for crash-safe idempotency.
+ return { duplicate: false }; }

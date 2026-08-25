@@ -1,0 +1,2 @@
+export const siteMode = (value) => value === 'TEST' ? 'TEST' : 'LIVE';
+export const sandboxPayment = ({ reference, amount }) => ({ providerTransactionId: `test_${reference}`, paymentCode: `TEST-${reference.slice(-8)}`, paymentUrl: `sandbox://evopay/${reference}`, qrString: `TEST-QR-${reference}`, expiresAt: null, instructions: { type: 'sandbox', message: 'Payment TEST. Complete via EvoPay API; Tokopay tidak dihubungi.' }, raw: { simulator: true, amount } });

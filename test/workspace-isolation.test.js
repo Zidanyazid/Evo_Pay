@@ -1,4 +1,0 @@
-import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';
-const db=fs.readFileSync(new URL('../src/database.js',import.meta.url),'utf8'),auth=fs.readFileSync(new URL('../src/middleware/authorization.js',import.meta.url),'utf8'),routes=fs.readFileSync(new URL('../src/routes/admin-routes.js',import.meta.url),'utf8');
-test('workspace migration preserves legacy data and session resolves active membership',()=>{assert.match(db,/CREATE TABLE IF NOT EXISTS workspaces/);assert.match(db,/CREATE TABLE IF NOT EXISTS workspace_members/);assert.match(db,/UPDATE merchants SET workspace_id=\?/);assert.match(auth,/wm\.workspace_id=s\.active_workspace_id/);});
-test('registration creates owner workspace and merchant listing is workspace scoped',()=>{assert.match(routes,/role:'owner'/);assert.match(routes,/INSERT INTO workspace_members/);assert.match(routes,/FROM merchants WHERE workspace_id=\?/);assert.match(routes,/active_workspace_id/);});

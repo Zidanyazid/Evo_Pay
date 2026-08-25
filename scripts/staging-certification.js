@@ -1,1 +1,2 @@
+import 'dotenv/config';
 const base=process.env.STAGING_BASE_URL;if(!base||!base.startsWith('https://'))throw Error('STAGING_BASE_URL HTTPS wajib.');const checks=[];for(const path of ['/health/live','/health/ready','/']){const r=await fetch(base+path);checks.push({path,status:r.status,csp:Boolean(r.headers.get('content-security-policy')),request_id:Boolean(r.headers.get('x-request-id'))})}console.log(JSON.stringify({base,checked_at:new Date().toISOString(),checks},null,2));if(checks.some(x=>x.status!==200||!x.csp||!x.request_id))process.exit(1);

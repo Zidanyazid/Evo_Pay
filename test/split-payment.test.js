@@ -1,6 +1,0 @@
-import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';
-const service=fs.readFileSync(new URL('../src/services/split-payment-service.js',import.meta.url),'utf8'),payment=fs.readFileSync(new URL('../src/services/payment-service.js',import.meta.url),'utf8'),routes=fs.readFileSync(new URL('../src/routes/project-finance-routes.js',import.meta.url),'utf8');
-test('split supports fixed percentage and deterministic remainder in integer rupiah',()=>{for(const x of ['FIXED','PERCENTAGE','REMAINDER','Math.floor'])assert.match(service,new RegExp(x));assert.match(service,/Number\.isInteger/);assert.match(service,/used>net/);});
-test('connected accounts and rules are tenant/project scoped',()=>{assert.match(service,/workspace_id=\? AND merchant_id=\?/);assert.match(service,/id=\? AND merchant_id=\?/);assert.match(routes,/q\.admin\.workspace_id/);});
-test('payment snapshots split before provider request and allocates only when paid',()=>{assert.match(payment,/this\.splits\?\.snapshot/);assert.match(payment,/this\.splits\?\.capture/);assert.match(service,/payment_splits/);assert.match(service,/status='PENDING'/);});
-test('refund reversal creates compensating negative allocations',()=>{assert.match(service,/'REVERSAL',-reversal/);assert.match(service,/-reversal/);assert.doesNotMatch(service,/UPDATE split_allocations SET amount/);});

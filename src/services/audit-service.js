@@ -1,9 +1,5 @@
 import db, { id, now } from '../database.js';
-const hidden = new Set(['password', 'api_key', 'secret', 'token']);
-function sanitize(value) {
-  if (!value || typeof value !== 'object') return value;
-  return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, hidden.has(key.toLowerCase()) ? '[REDACTED]' : (typeof item === 'object' ? sanitize(item) : item)]));
-}
-export async function audit(action, { actorId = null, targetType = null, targetId = null, ip = null, userAgent = null, metadata = null } = {}) {
-  await db.run('INSERT INTO audit_logs (id,actor_id,action,target_type,target_id,ip,user_agent,metadata_json,created_at) VALUES (?,?,?,?,?,?,?,?,?)', [id('aud'), actorId, action, targetType, targetId, ip, userAgent, metadata ? JSON.stringify(sanitize(metadata)) : null, now()]);
-}
+const blocked = /pass|secret|token|cookie|authorization|api_?key|signature|payload|email|phone|customer/i;
+export function safeMetadata(value = {}) { const output = {}; for (const [key, item] of Object.entries(value)) { if (blocked.test(key) || !['string', 'number', 'boolean'].includes(typeof item)) continue; const candidate = { ...output, [key]: String(item).slice(0, 200) }; if (JSON.stringify(candidate).length > 1024) break; Object.assign(output, candidate); } return JSON.stringify(output); }
+export async function recordAudit(req, action, targetId = null, metadata = {}) { await db.run('INSERT INTO audit_logs (id,action,target_id,metadata_json,created_at) VALUES (?,?,?,?,?)', [id('aud'), action, targetId, safeMetadata(metadata), now()]); }
+export function auditSummary(entry) { const metadata = typeof entry.metadata_json === 'string' ? JSON.parse(entry.metadata_json || '{}') : entry.metadata_json || {}; return Object.entries(metadata).map(([key, value]) => `${key.replaceAll('_', ' ')}: ${value}`).join(' · ') || 'Tidak ada metadata tambahan.'; }

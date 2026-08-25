@@ -1,178 +1,104 @@
 <!doctype html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Developer Documentation — EvoPay</title>
-  <meta name="description" content="Dokumentasi integrasi EvoPay API, webhook, dan contoh kode multi-bahasa.">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/docs.css?v=20260822-developer-command">
+  <title>EvoPay API Documentation</title>
+  <meta name="description" content="Dokumentasi API EvoPay personal Tokopay gateway.">
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/docs.css">
 </head>
 <body>
-  <header>
-    <a class="brand" href="/"><b>E</b><span>EVOPAY</span></a>
-    <nav>
-      <a href="#quickstart">Quickstart</a>
-      <a href="#api">API</a>
-      <a href="#webhook">Webhook</a>
-      <a href="/openapi.yaml">OpenAPI ↗</a>
-    </nav>
-    <button id="theme" aria-label="Ganti tema" title="Ganti tema terang/gelap">◐</button>
-  </header>
-  <main>
-    <aside>
-      <p>GETTING STARTED</p>
-      <a href="#quickstart">Overview</a>
-      <a href="#authentication">Authentication</a>
-      <p>PAYMENTS</p>
-      <a href="#methods">Payment methods</a>
-      <a href="#create">Create payment</a>
-      <a href="#status">Payment status</a>
-      <a href="#webhook">Webhooks</a>
-      <p>RESOURCES</p>
-      <a href="#errors">Error codes</a>
-      <a href="#security">Security</a>
-    </aside>
-    <article>
-      <section class="hero" id="quickstart">
-        <div class="hero-grid"></div><div class="hero-glow"></div>
-        <div class="hero-copy"><span class="pill"><i></i> API v1 · LIVE READY</span>
-        <h1>Payments that <em>feel effortless.</em></h1>
-        <p>Integrasikan checkout, webhook, dan rekonsiliasi secara aman. EvoPay memberi kontrol penuh pada setiap transaksi.</p>
-        <div class="hero-actions"><a class="primary" href="#create">Mulai integrasi <span>→</span></a><a class="secondary" href="/openapi.yaml">OpenAPI specification ↗</a></div></div>
-        <div class="hero-terminal"><div class="terminal-head"><span><i></i><i></i><i></i></span><b>evopay / status</b><em>LIVE</em></div><div class="terminal-body"><small>GET /api/v1/health</small><strong><i></i> Operational</strong><p>Latency <b>48ms</b> · API v1</p><div class="terminal-bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div></div>
-      </section>
+  <header class="docs-topbar"><a class="brand" href="/"><span class="brand-mark">E</span><span>EvoPay</span><small>Docs</small></a><nav><a href="#quickstart">Quickstart</a><a href="#authentication">Authentication</a><a href="#sandbox">Sandbox</a><a href="#webhooks">Webhooks</a><a href="#node-helper">Helpers</a><a href="/" class="dashboard-link">← Dashboard</a></nav></header>
+  <main class="docs-shell">
+    <aside class="docs-nav"><p>GETTING STARTED</p><a class="active" href="#overview">Overview</a><a href="#quickstart">Quickstart</a><a href="#authentication">Authentication</a><p>PAYMENTS</p><a href="#methods">Payment methods</a><a href="#create-payment">Create payment</a><a href="#get-payment">Get payment</a><a href="#sync-payment">Sync payment</a><p>WEBHOOKS</p><a href="#webhooks">Callback overview</a><a href="#signature">Verify signature</a><p>DEVELOPER TOOLS</p><a href="#node-helper">Node.js helper</a><a href="#php-helper">PHP helper</a><a href="#local-mock">Local mock</a><a href="#errors">Errors & request ID</a><a href="#recovery">Operations & recovery</a></aside>
+    <article class="docs-content">
+      <section id="overview" class="docs-hero"><p class="eyebrow">EVOPAY API REFERENCE · V1</p><h1>Gateway pembayaran<br><em>untuk semua project Anda.</em></h1><p>EvoPay menghubungkan website Anda ke satu akun Tokopay. EvoPay hanya meneruskan order dan status — dana tetap berada di Tokopay.</p><div class="hero-pills"><span><i></i> Tokopay connected</span><span>REST API</span><span>Signed callbacks</span></div></section>
+      <section id="quickstart"><p class="eyebrow">GETTING STARTED</p><h2>Quickstart</h2><p class="lead">Buat Site di dashboard, simpan API key, lalu gunakan key tersebut dari backend project Anda.</p><div class="steps"><div><b>01</b><span>Buat Site</span><small>Dashboard → Sites & API Keys</small></div><div><b>02</b><span>Simpan key</span><small>API key hanya tampil sekali</small></div><div><b>03</b><span>Buat payment</span><small>Panggil endpoint dari server Anda</small></div></div></section>
+      <section id="authentication"><p class="eyebrow">AUTHENTICATION</p><h2>API key per Site</h2><p>Semua endpoint payment menggunakan Bearer API key. Jangan taruh key ini di JavaScript browser atau aplikasi client.</p><pre><code><span class="dim">Authorization:</span> Bearer ep_your_site_api_key</code><button class="copy" data-copy="Authorization: Bearer ep_your_site_api_key">Copy</button></pre></section>
+      <section id="methods"><p class="eyebrow">PAYMENTS</p><h2>Daftar metode pembayaran</h2><p>Gunakan endpoint ini untuk menampilkan channel yang tersedia dari Tokopay.</p><div class="endpoint"><span class="method get">GET</span><code>/api/v1/payment-methods</code></div></section>
+      <section id="rate-limits"><p class="eyebrow">API RELIABILITY</p><h2>Usage limits per Site</h2><p>Setiap Site dibatasi per fixed window 60 detik: create payment 30/minute dan sync 60/minute secara default. Admin dapat mengubah limit per Site dari dashboard.</p><p>Saat limit habis, response <code>429 RATE_LIMITED</code> menyertakan <code>Retry-After</code>, <code>X-RateLimit-Limit</code>, <code>X-RateLimit-Remaining</code>, dan <code>X-RateLimit-Reset</code>. Gunakan backoff; jangan melakukan retry loop.</p></section>
+      <section id="maintenance"><p class="eyebrow">SITE OPERATIONS</p><h2>Maintenance mode</h2><p>Saat Site sedang deploy, admin dapat menghentikan pembuatan payment baru tanpa mematikan API key. Request create akan menerima <code>503 SITE_MAINTENANCE</code> dengan header <code>Retry-After: 300</code>.</p><pre><code>{
+  "error": {
+    "code": "SITE_MAINTENANCE",
+    "message": "Pembayaran sementara tidak tersedia untuk Site ini.",
+    "retry_after_seconds": 300
+  }
+}</code></pre><p>Jangan loop request create. Tampilkan pesan lalu coba kembali setelah deploy. Get/sync payment existing dan webhook tetap berjalan.</p></section>
+      <section id="create-payment"><p class="eyebrow">PAYMENTS</p><h2>Create payment</h2><p>Membuat order baru pada Tokopay. Kombinasi <code>order_id</code> dan Site bersifat idempotent.</p><div class="endpoint"><span class="method post">POST</span><code>/api/v1/payments</code></div><div class="code-grid"><div><h3>Request body</h3><pre><code>{
+  <span class="key">"order_id"</span>: <span class="string">"TOPUP-10001"</span>,
+  <span class="key">"amount"</span>: <span class="number">15000</span>,
+  <span class="key">"payment_method"</span>: <span class="string">"QRIS"</span>,
+  <span class="key">"customer"</span>: {
+    <span class="key">"name"</span>: <span class="string">"Budi"</span>
+  }
+}</code><button class="copy" data-copy='{"order_id":"TOPUP-10001","amount":15000,"payment_method":"QRIS"}'>Copy</button></pre></div><div><h3>Response</h3><pre><code>{
+  <span class="key">"data"</span>: {
+    <span class="key">"id"</span>: <span class="string">"pay_..."</span>,
+    <span class="key">"status"</span>: <span class="string">"PENDING"</span>,
+    <span class="key">"payment_url"</span>: <span class="string">"https://..."</span>,
+    <span class="key">"qr_string"</span>: <span class="string">"000201..."</span>
+  }
+}</code></pre></div></div></section>
+      <section id="expiration"><p class="eyebrow">PAYMENT LIFECYCLE</p><h2>Payment expiration</h2><p>Payment LIVE yang tetap <code>PENDING</code> setelah <code>expires_at</code> dari Tokopay akan ditandai <code>EXPIRED</code> oleh EvoPay. Selalu tangani status <code>EXPIRED</code> saat menampilkan checkout atau memeriksa order.</p><p>Payment tanpa expiry dan Site TEST tidak diproses. Expiry tidak memicu callback karena event EvoPay saat ini hanya <code>payment.paid</code>.</p></section>
+      <section id="get-payment"><p class="eyebrow">PAYMENTS</p><h2>Get payment</h2><p>Ambil status payment yang sudah dibuat.</p><div class="endpoint"><span class="method get">GET</span><code>/api/v1/payments/:id</code></div></section>
+      <section id="sync-payment"><p class="eyebrow">PAYMENTS</p><h2>Sync payment status</h2><p>Periksa ulang status payment langsung ke Tokopay. Gunakan untuk recovery bila callback belum diterima.</p><div class="endpoint"><span class="method post">POST</span><code>/api/v1/payments/:id/sync</code></div></section>
+      <section id="node-helper"><p class="eyebrow">NODE.JS</p><h2>Copyable client helper</h2><p>Salin <code>examples/node/evopay-client.js</code> ke backend project Anda. Helper ini memakai native fetch, timeout, dan request ID.</p><pre><code>import { EvoPayClient } from './evopay-client.js';
+const pay = new EvoPayClient({
+  baseUrl: process.env.EVOPAY_URL,
+  apiKey: process.env.EVOPAY_API_KEY
+});
+const payment = await pay.createPayment({
+  order_id: 'TOPUP-10001', amount: 15000, payment_method: 'QRIS'
+});</code><button class="copy" data-copy="import { EvoPayClient } from './evopay-client.js';">Copy</button></pre></section>
+      <section id="php-helper"><p class="eyebrow">PHP</p><h2>Native cURL helper</h2><p>Salin <code>examples/php/evopay_client.php</code> ke backend PHP Anda. Tidak perlu Composer atau package tambahan.</p><pre><code>require 'evopay_client.php';
+$pay = new EvoPayClient($_ENV['EVOPAY_URL'], $_ENV['EVOPAY_API_KEY']);
+$payment = $pay->createPayment([
+  'order_id' => 'TOPUP-10001', 'amount' => 15000, 'payment_method' => 'QRIS'
+]);</code><button class="copy" data-copy="require 'evopay_client.php';">Copy</button></pre></section>
+      <section id="recovery"><p class="eyebrow">OPERATIONS</p><h2>Recovery & escalation</h2><p>Simpan <code>x-request-id</code> untuk setiap error integrasi. Untuk <code>429</code>, gunakan backoff mengikuti <code>Retry-After</code>; untuk <code>503 SITE_MAINTENANCE</code>, tampilkan pesan sementara dan jangan retry loop; tangani <code>EXPIRED</code> sebagai checkout tidak lagi dapat dibayar.</p><p>Operator gateway dapat menggunakan <a href="/" >Recovery Center</a> dan <a href="/docs/RUNBOOK.md" target="_blank">Recovery Runbook</a> untuk callback gagal, provider delay, database, backup, dan credential rotation.</p></section>
+      <section id="errors"><p class="eyebrow">ERROR HANDLING</p><h2>Request ID</h2><p>Setiap response public API menyertakan header <code>x-request-id</code>. Simpan ID ini bersama error integration agar pencarian Activity Log atau server log lebih cepat.</p><pre><code>try { await pay.createPayment(input); }
+catch (error) {
+  console.error(error.status, error.code, error.requestId);
+}</code></pre></section>
+      <section id="local-mock"><p class="eyebrow">LOCAL DEVELOPMENT</p><h2>Tokopay mock</h2><p>Mock hanya untuk contract test lokal. Jalankan pada terminal terpisah dan arahkan EvoPay dev ke URL mock.</p><pre><code>npm run mock:tokopay
+TOKOPAY_API_URL=http://127.0.0.1:4010/v1 npm run dev
 
-      <section id="authentication">
-        <span class="index">01 / AUTHENTICATION</span>
-        <h2>Satu key, akses yang terkontrol.</h2>
-        <p>Kirim API key merchant melalui Bearer authentication. Simpan key hanya di server—jangan pernah menaruhnya di browser atau aplikasi mobile.</p>
-        <div class="code">
-          <div><span>HTTP</span><button data-copy="Authorization: Bearer np_...">Copy</button></div>
-          <pre><code>Authorization: Bearer <i>np_...</i>
-Content-Type: application/json
-Idempotency-Key: order-10001</code></pre>
-        </div>
-      </section>
-
-      <section id="methods">
-        <span class="index">02 / PAYMENT METHODS</span>
-        <h2>26 channel pembayaran EvoPay.</h2>
-        <p>Ambil metode merchant dengan <code>GET /api/v1/payment-methods</code>. Setiap item memuat biaya admin, penanggung biaya, settlement, minimum, maksimum, status aktif, dan kebutuhan pendaftaran.</p>
-        <div class="note">
-          <b>Virtual Account · 10 channel</b>
-          <p><code>BRIVA</code>, <code>BCAVA</code>, <code>BNIVA</code>, <code>MANDIRIVA</code>, <code>PERMATAVA</code>, <code>CIMBVA</code>, <code>DANAMONVA</code>, <code>BSIVA</code>, <code>BNCVA</code>, <code>PERMATAVAA</code></p>
-          <b>E-Money · 11 channel</b>
-          <p><code>SHOPEEPAY</code>, <code>GOPAY</code>, <code>DANA</code>, <code>LINKAJA</code>, <code>VIRGO</code>, <code>ASTRAPAY</code>, <code>OVOPUSH</code>, <code>DANA_REALTIME</code>, <code>SHOPEEPAY_REALTIME</code>, <code>GOPAY_REALTIME</code>, <code>OVOPUSH_REALTIME</code></p>
-          <b>QRIS · 3 channel</b>
-          <p><code>QRIS</code>, <code>QRISREALTIME</code>, <code>QRIS_CUSTOM</code>. QRIS Custom memerlukan pendaftaran merchant.</p>
-          <b>Retail · 2 channel</b>
-          <p><code>ALFAMART</code>, <code>INDOMARET</code></p>
-        </div>
-        <p>Biaya pembeli menaikkan <code>total_amount</code>; biaya merchant mengurangi <code>net_amount</code>. Error operasional: <code>PAYMENT_METHOD_UNKNOWN</code>, <code>PAYMENT_METHOD_DISABLED</code>, <code>PAYMENT_METHOD_REGISTRATION_REQUIRED</code>, dan <code>PAYMENT_AMOUNT_OUT_OF_RANGE</code>.</p>
-      </section>
-
-      <section id="create">
-        <span class="index">02 / CREATE PAYMENT</span>
-        <div class="section-head">
-          <div>
-            <h2>Create payment</h2>
-            <p>Buat invoice baru dan dapatkan hosted checkout URL.</p>
-          </div>
-          <span class="method">POST</span><code>/api/v1/payments</code>
-        </div>
-        <div class="tabs">
-          <button class="active" data-lang="curl">cURL</button>
-          <button data-lang="javascript">JavaScript</button>
-          <button data-lang="php">PHP</button>
-          <button data-lang="python">Python</button>
-        </div>
-        <div class="code main-code">
-          <div><span id="code-label">cURL</span><button id="copy-code">Copy code</button></div>
-          <pre><code id="snippet"></code></pre>
-        </div>
-        <div class="response">
-          <b>201 CREATED</b>
-          <pre><code>{
-  "data": {
-    "id": "pay_8db...",
-    "order_id": "TOPUP-10001",
-    "status": "PENDING",
-    "amount": 15000,
-    "checkout_url": "https://gateway.example/pay/..."
-  },
-  "duplicate": false
-}</code></pre>
-        </div>
-      </section>
-
-      <section id="status">
-        <span class="index">03 / PAYMENT STATUS</span>
-        <h2>Lifecycle yang dapat diprediksi.</h2>
-        <div class="states">
-          <div><b>PENDING</b><span>Menunggu pelanggan</span></div>
-          <i>→</i>
-          <div class="paid"><b>PAID</b><span>Proses produk</span></div>
-          <i>↘</i>
-          <div><b>FAILED</b><span>Transaksi gagal</span></div>
-          <div><b>EXPIRED</b><span>Waktu berakhir</span></div>
-        </div>
-        <div class="endpoint"><span class="get">GET</span><code>/api/v1/payments/{paymentId}</code></div>
-        <div class="endpoint"><span class="method">POST</span><code>/api/v1/payments/{paymentId}/sync</code></div>
-      </section>
-
-      <section id="webhook">
-        <span class="index">04 / WEBHOOKS</span>
-        <h2>Ketahui pembayaran secara real-time.</h2>
-        <p>EvoPay mengirim event ke callback merchant. Balas HTTP 2xx dengan cepat dan deduplikasi event berdasarkan payment ID.</p>
-        <div class="warning">
-          <b>Golden rule</b>
-          <span>Jangan proses produk dari redirect browser. Hanya proses setelah webhook <code>payment.paid</code> atau verifikasi API.</span>
-        </div>
-        <div class="code">
-          <div><span>PAYLOAD</span><button data-copy='{"event":"payment.paid","data":{"id":"pay_...","status":"PAID"}}'>Copy</button></div>
-          <pre><code>{
+# tandai order mock sebagai paid
+curl -X POST http://127.0.0.1:4010/dev/orders/EP_REFERENCE/paid</code><button class="copy" data-copy="npm run mock:tokopay">Copy</button></pre></section>
+      <section id="sandbox"><p class="eyebrow">SANDBOX MODE</p><h2>Site TEST tanpa Tokopay</h2><p>Buat Site dengan environment <code>TEST</code> dari dashboard. Site TEST memiliki API key dan callback sendiri; create payment hanya memakai simulator EvoPay lokal, tidak membuat order maupun dana di Tokopay.</p><div class="endpoint"><span class="method post">POST</span><code>/api/v1/payments/:id/complete-test</code></div><p>Gunakan endpoint ini hanya dengan API key Site TEST untuk menandai payment test sebagai <code>PAID</code> dan memicu callback signed. Endpoint menolak payment LIVE.</p></section>
+      <section id="webhook-test"><p class="eyebrow">WEBHOOK TEST</p><h2>Test callback delivery</h2><p>Pada Site aktif dengan callback URL, tekan <strong>Test webhook</strong> di dashboard. EvoPay mengirim event <code>payment.paid</code> sintetis dengan <code>test: true</code>, signature HMAC asli, dan header delivery ID unik.</p><pre><code>{
   "event": "payment.paid",
-  "data": { "id": "pay_...", "order_id": "TOPUP-10001", "status": "PAID" }
-}</code></pre>
-        </div>
-      </section>
+  "test": true,
+  "data": { "id": "test_...", "environment": "TEST", "amount": 1000 }
+}</code></pre><p>Test tidak membuat payment, tidak menghubungi Tokopay, dan tidak tercampur dengan callback payment asli. Handler harus melakukan deduplication memakai <code>x-evopay-delivery</code>. Satu test per Site setiap 60 detik.</p></section>
+      <section id="webhooks"><p class="eyebrow">WEBHOOKS</p><h2>Payment callbacks</h2><p>Saat Tokopay mengonfirmasi pembayaran, EvoPay mengirim callback <code>payment.paid</code> ke callback URL Site Anda.</p><div class="notice"><span>◇</span><div><strong>Provider webhook endpoint</strong><code>https://your-evopay-domain/webhooks/tokopay</code><small>Konfigurasikan endpoint ini di dashboard Tokopay.</small></div></div><pre><code>{
+  <span class="key">"event"</span>: <span class="string">"payment.paid"</span>,
+  <span class="key">"data"</span>: {
+    <span class="key">"id"</span>: <span class="string">"pay_..."</span>,
+    <span class="key">"order_id"</span>: <span class="string">"TOPUP-10001"</span>,
+    <span class="key">"status"</span>: <span class="string">"PAID"</span>,
+    <span class="key">"amount"</span>: <span class="number">15000</span>
+  }
+}</code></pre></section>
+      <section id="signature"><p class="eyebrow">WEBHOOK SECURITY</p><h2>Verifikasi signature</h2><p>Callback memiliki header <code>x-evopay-signature: sha256=&lt;digest&gt;</code>. Hitung HMAC SHA-256 dari raw request body menggunakan webhook secret Site Anda, lalu bandingkan dengan aman.</p><pre><code><span class="dim">// Node.js</span>
+const expected = crypto
+  .createHmac(<span class="string">'sha256'</span>, process.env.EVOPAY_WEBHOOK_SECRET)
+  .update(rawBody)
+  .digest(<span class="string">'hex'</span>);
 
-      <section id="errors">
-        <span class="index">05 / ERRORS</span>
-        <h2>Error catalog</h2>
-        <div class="table">
-          <div><b>VALIDATION_ERROR</b><span>422</span><p>Payload tidak memenuhi kontrak.</p></div>
-          <div><b>UNAUTHORIZED</b><span>401</span><p>API key hilang, salah, atau dicabut.</p></div>
-          <div><b>NOT_FOUND</b><span>404</span><p>Resource tidak ditemukan untuk merchant.</p></div>
-          <div><b>GATEWAY_ERROR</b><span>502</span><p>Provider sementara tidak tersedia.</p></div>
-        </div>
-      </section>
-
-      <section id="security">
-        <span class="index">06 / SECURITY</span>
-        <h2>Production checklist</h2>
-        <ul>
-          <li>Gunakan HTTPS pada gateway dan callback.</li>
-          <li>Simpan secret di environment server.</li>
-          <li>Gunakan idempotency key untuk setiap operasi POST.</li>
-          <li>Validasi status dan nominal sebelum menyerahkan produk.</li>
-          <li>Rotasi credential secara berkala.</li>
-        </ul>
-      </section>
-
-      <section id="ip-whitelist-security">
-        <span class="index">07 / WHITELIST IP</span>
-        <h2>Whitelist IP</h2>
-        <p>Akses API dapat dibatasi per merchant untuk IPv4, IPv6, atau CIDR melalui dashboard <strong>Whitelist IP</strong>. Jika request berasal dari jaringan yang tidak diizinkan, API mengembalikan <code>403 IP_NOT_ALLOWED</code>.</p>
-        <p>Gunakan <code>TRUST_PROXY=1</code> hanya jika EvoPay berada di belakang reverse proxy tepercaya agar IP klien diteruskan secara aman.</p>
-      </section>
-
-      <footer>EvoPay Developer Platform <span>API v1</span></footer>
+const signature = req.headers[<span class="string">'x-evopay-signature'</span>];
+const valid = crypto.timingSafeEqual(
+  Buffer.from(<span class="string">`sha256=${expected}`</span>),
+  Buffer.from(signature)
+);</code><button class="copy" data-copy="Verify x-evopay-signature using HMAC SHA-256 of raw body and your Site webhook secret.">Copy</button></pre></section>
+      <section id="webhook-examples"><p class="eyebrow">WEBHOOK HANDLER</p><h2>Handler examples</h2><p>Gunakan raw request body untuk HMAC verification. Deduplicate berdasarkan header <code>x-evopay-delivery</code> sebelum memenuhi order.</p><div class="code-grid"><div><h3>Node.js</h3><pre><code>import { handlePaymentPaid } from './webhook-handler.js';
+await handlePaymentPaid({ rawBody, signature, deliveryId, secret,
+  hasProcessed, processPayment, markProcessed });</code></pre></div><div><h3>PHP</h3><pre><code>require 'webhook_handler.php';
+$event = handle_payment_paid($rawBody, $signature,
+  $deliveryId, $_ENV['EVOPAY_WEBHOOK_SECRET']);</code></pre></div></div></section>
+      <footer>© 2026 EvoPay Personal Gateway · Dana dan settlement dikelola Tokopay.</footer>
     </article>
-  </main>
-  <script src="/docs.js"></script>
-</body>
-</html>
+  </main><script>document.querySelectorAll('.copy').forEach(b=>b.onclick=async()=>{await navigator.clipboard.writeText(b.dataset.copy);b.textContent='Copied';setTimeout(()=>b.textContent='Copy',1200)});</script>
+</body></html>

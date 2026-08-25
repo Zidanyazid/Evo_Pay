@@ -1,8 +1,15 @@
-# EvoPay Gateway
+# EvoPay Personal Gateway
 
-Gateway pembayaran **self-hosted** untuk banyak website topup. Website mengakses API EvoPay; EvoPay meneruskan transaksi ke Tokopay. Kredensial Tokopay tidak pernah dikirim ke browser atau merchant website.
+EvoPay adalah gateway pribadi untuk menghubungkan banyak website Anda ke satu akun Tokopay.
 
-## Mulai lokal
+```text
+Website Anda → EvoPay API → Tokopay
+Tokopay webhook → EvoPay → callback signed ke website Anda
+```
+
+EvoPay tidak menyimpan saldo, tidak melakukan settlement/payout, dan tidak memproses refund. Dana dan alur settlement tetap berada di Tokopay.
+
+## Jalankan lokal
 
 ```bash
 cp .env.example .env
@@ -10,82 +17,89 @@ npm install
 npm run dev
 ```
 
-Buka `http://localhost:3000`. Password dashboard awal ada di `ADMIN_PASSWORD` dalam `.env`. Ganti sebelum dipakai. Merchant demo tersedia hanya untuk pengujian lokal:
+Buka `http://localhost:3000`, masuk memakai `ADMIN_PASSWORD`, lalu buat satu **Site** untuk tiap website. API key Site hanya tampil saat dibuat atau dirotasi.
 
-```text
-Authorization: Bearer np_demo_topup_please_change
-```
-
-> Ganti atau hapus key demo sebelum deployment.
-
-## Konfigurasi Tokopay
-
-Isi file `.env` dengan kredensial Anda, lalu restart server:
-
-```env
-APP_BASE_URL=https://gateway.domain-anda.com
-TOKOPAY_MERCHANT_ID=...
-TOKOPAY_SECRET=...
-TOKOPAY_WEBHOOK_IPS=178.128.104.179
-```
-
-Atur callback di Tokopay menjadi `https://gateway.domain-anda.com/webhooks/tokopay`. Endpoint memeriksa signature sebelum memperbarui transaksi dan selalu membalas `{"status":true}` agar sesuai callback Tokopay.
-
-## API untuk website topup
-
-### Buat pembayaran
+## API payment
 
 ```bash
 curl -X POST http://localhost:3000/api/v1/payments \
-  -H 'Authorization: Bearer API_KEY_MERCHANT' \
+  -H 'Authorization: Bearer API_KEY_SITE' \
   -H 'Content-Type: application/json' \
-  -d '{
-    "order_id":"TOPUP-10001",
-    "amount":15000,
-    "payment_method":"qris",
-    "customer":{"name":"Zidan","email":"zidan@example.com"},
-    "description":"Topup game",
-    "redirect_url":"https://topup-anda.com/order/TOPUP-10001"
-  }'
+  -d '{"order_id":"TOPUP-10001","amount":15000,"payment_method":"QRIS"}'
 ```
 
-Simpan `data.id` dari respons. Jika `order_id` yang sama dikirim ulang untuk merchant sama, gateway mengembalikan transaksi lama (`duplicate: true`) — aman untuk retry dari website.
+- `GET /api/v1/payment-methods`
+- `POST /api/v1/payments`
+- `GET /api/v1/payments/:id`
+- `POST /api/v1/payments/:id/sync`
 
-### Cek atau sinkronkan status
+Tokopay callback harus diarahkan ke `https://domain-anda/webhooks/tokopay`.
 
-```bash
-curl -H 'Authorization: Bearer API_KEY_MERCHANT' \
-  http://localhost:3000/api/v1/payments/PAYMENT_ID
+## Callback ke Site
 
-curl -X POST -H 'Authorization: Bearer API_KEY_MERCHANT' \
-  http://localhost:3000/api/v1/payments/PAYMENT_ID/sync
-```
-
-### Callback ke merchant
-
-Saat pembayaran menjadi `PAID`, EvoPay mengirim `POST` JSON ke URL callback yang disimpan pada merchant. Payload berbentuk:
+Saat status menjadi `PAID`, EvoPay mengirim POST JSON ke callback URL Site:
 
 ```json
-{ "event": "payment.paid", "data": { "id": "pay_...", "order_id": "TOPUP-10001", "status": "PAID" } }
+{"event":"payment.paid","data":{"id":"pay_...","order_id":"TOPUP-10001","status":"PAID"}}
 ```
 
-Produk topup **hanya boleh diproses** setelah menerima status `PAID` dan setelah melakukan pengecekan idempotensi di aplikasi Anda.
+Header `x-evopay-signature` berbentuk `sha256=<HMAC SHA-256 payload>`. Verifikasi signature menggunakan `webhook_secret` yang ditampilkan saat Site dibuat. Callback di-retry dan dapat dikirim ulang dari dashboard bila dead-letter.
 
-## Manajemen merchant
+## Produksi
 
-Buka **Merchants** pada dashboard untuk mengelola setiap website topup:
+- Gunakan HTTPS dan `APP_BASE_URL` publik.
+- Isi `TOKOPAY_MERCHANT_ID` dan `TOKOPAY_SECRET`.
+- Set `SIMULATOR_ENABLED=0`.
+- Gunakan user MySQL khusus aplikasi, bukan `root`.
+- Simpan `.env`, dump `backups/`, serta API key di luar Git.
 
-- **Manage** membuka form untuk mengubah nama merchant dan callback URL.
-- **Disable merchant** langsung menolak semua request API dari key merchant tersebut, tanpa menghapus riwayat transaksi. Gunakan **Enable merchant** untuk memulihkan akses.
-- **Rotate API key** langsung membatalkan key lama dan menghasilkan key baru. Salin key baru yang hanya ditampilkan satu kali, lalu ganti konfigurasi pada website topup sebelum request berikutnya.
+## Validasi
 
-## Operasional dan keamanan
+```bash
+npm test
+npm run check:syntax
+npm audit --omit=dev --audit-level=high
+```
 
-- Gunakan HTTPS, password admin panjang, dan `APP_BASE_URL` publik di produksi.
-- Jangan menyimpan `.env` atau database SQLite di repository.
-- SQLite dipakai untuk single server. Pindah ke PostgreSQL sebelum menjalankan beberapa instance gateway atau trafik tinggi.
-- Jalankan `npm test` untuk unit test dan `npm run dev` saat development.
+## Observability
 
-## Developer Documentation
+- `GET /health/live`: process liveness probe.
+- `GET /health/ready`: database and Tokopay configuration readiness probe.
+- `GET /internal/metrics`: private Prometheus text metrics. Send `Authorization: Bearer $OBSERVABILITY_TOKEN`.
 
-Portal dokumentasi interaktif tersedia di [`/docs`](http://localhost:3000/docs.html). Kontrak OpenAPI tersedia di [`/openapi.yaml`](http://localhost:3000/openapi.yaml), dengan panduan sumber di `docs/api.md` dan `docs/webhooks.md`.
+```bash
+curl -H "Authorization: Bearer $OBSERVABILITY_TOKEN" http://localhost:3000/internal/metrics
+```
+
+Alert minimum: readiness non-200, `evopay_callback_dead_letter > 0`, atau reconciliation run memiliki error.
+
+## Payment expiration
+
+Worker memindahkan payment `LIVE` berstatus `PENDING` ke `EXPIRED` bila `expires_at` dari Tokopay sudah lewat. Payment tanpa expiry dan Site `TEST` tidak disentuh. Tidak ada callback expiry karena EvoPay saat ini hanya memiliki event `payment.paid`.
+
+```bash
+# optional tuning
+PAYMENT_EXPIRATION_INTERVAL_MS=60000
+PAYMENT_EXPIRATION_BATCH_SIZE=100
+```
+
+## Site maintenance mode
+
+Aktifkan maintenance per Site dari dashboard saat deploy. EvoPay menolak `POST /api/v1/payments` dengan `503 SITE_MAINTENANCE` dan header `Retry-After: 300`. Jangan loop request create; tampilkan pesan sementara lalu retry setelah maintenance selesai. Get/sync payment existing, Tokopay webhook, dan callback delivery tetap berjalan.
+
+## API usage limit per Site
+
+EvoPay menerapkan fixed-window 60 detik per Site: create payment default `30/menit`, sync default `60/menit`. Set override dari **Usage limits** pada Site card. Saat limit tercapai, client menerima `429 RATE_LIMITED`, `Retry-After`, dan header `X-RateLimit-*`; gunakan backoff sampai window berikutnya.
+
+```env
+SITE_CREATE_PAYMENT_LIMIT_PER_MINUTE=30
+SITE_SYNC_PAYMENT_LIMIT_PER_MINUTE=60
+```
+
+## Recovery Runbook
+
+Emergency checklist: cek `/health/ready`; aktifkan Site Maintenance bila create traffic harus dihentikan; periksa callback/reconciliation backlog; lalu ikuti [Recovery Runbook](docs/RUNBOOK.md). Jangan restore database produksi in-place.
+
+## Structured Alerts
+
+Dashboard **Alerts** menyatukan kondisi yang membutuhkan tindakan: callback dead-letter/retry, error atau keterlambatan rekonsiliasi, expiry backlog, maintenance lebih dari 30 menit, dan usage quota Site ≥80%. Alert dihitung dari state operasional saat halaman dimuat dan hilang otomatis saat kondisi pulih. Alert tidak mengeksekusi recovery otomatis; gunakan action link untuk menuju Webhook monitor, Rekonsiliasi, Recovery Center, atau Sites.

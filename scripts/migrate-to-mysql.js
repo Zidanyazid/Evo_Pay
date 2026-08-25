@@ -1,3 +1,4 @@
+import 'dotenv/config';
 /**
  * Automated migration script: SQLite → MySQL
  * Transforms db.prepare(...).get/run/all() → await db.get/run/all()

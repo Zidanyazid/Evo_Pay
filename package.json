@@ -2,7 +2,7 @@
   "name": "evopay-gateway",
   "version": "0.1.0",
   "private": true,
-  "description": "Self-hosted multi-merchant payment gateway with Tokopay adapter",
+  "description": "Personal Tokopay payment gateway for private projects",
   "type": "module",
   "scripts": {
     "dev": "node --watch src/server.js",
@@ -16,7 +16,8 @@
     "db:verify": "node scripts/database-maintenance.js verify",
     "test:load": "node scripts/load-smoke.js",
     "certify:staging": "node scripts/staging-certification.js",
-    "check:production": "npm run test:production"
+    "check:production": "npm run test:production",
+    "mock:tokopay": "node scripts/tokopay-mock.js"
   },
   "engines": {
     "node": ">=20"
@@ -25,7 +26,6 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "helmet": "^8.0.0",
-    "mysql2": "^3.22.6",
-    "nodemailer": "^9.0.5"
+    "mysql2": "^3.22.6"
   }
 }
