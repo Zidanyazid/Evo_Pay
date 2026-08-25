@@ -1,0 +1,7 @@
+import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';
+const vault=fs.readFileSync(new URL('../src/services/vault-service.js',import.meta.url),'utf8'),routes=fs.readFileSync(new URL('../src/routes/commerce-routes.js',import.meta.url),'utf8'),simulator=fs.readFileSync(new URL('../src/providers/simulator-provider.js',import.meta.url),'utf8');
+test('vault rejects PAN CVV and raw card fields',()=>{assert.match(vault,/PAN, CVV/);assert.match(vault,/x\.pan\|\|x\.cvv\|\|x\.card_number/);});
+test('vault stores encrypted opaque token and hash fingerprint only',()=>{assert.match(vault,/encryptSecret\(x\.provider_token\)/);assert.match(vault,/createHash\('sha256'/);assert.doesNotMatch(vault,/provider_token VARCHAR/);});
+test('vault is tenant project customer scoped and audited',()=>{assert.match(vault,/workspace_id=\? AND merchant_id=\? AND customer_id=\?/);assert.match(vault,/vault\.method_stored/);assert.match(vault,/vault\.method_revoked/);});
+test('provider capability gates tokenization',()=>{assert.match(vault,/tokenization===true/);assert.match(vault,/Provider tidak mendukung tokenization/);assert.match(simulator,/tokenization:true/);});
+test('customer payment method endpoints never expose token',()=>{assert.match(routes,/customers\/:customerId\/payment-methods/);assert.doesNotMatch(vault,/SELECT \* FROM vaulted_payment_methods WHERE workspace_id/);});

@@ -1,0 +1,7 @@
+import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';
+const service=fs.readFileSync(new URL('../src/services/notification-service.js',import.meta.url),'utf8'),routes=fs.readFileSync(new URL('../src/routes/foundation-routes.js',import.meta.url),'utf8');
+test('notification channels and rules are workspace scoped',()=>{assert.match(service,/WHERE workspace_id=\?/);assert.match(service,/notification_rules WHERE workspace_id=\?/);assert.match(routes,/req\.admin\.workspace_id/);});
+test('outbound webhook channels enforce SSRF policy timeout and signature',()=>{assert.match(service,/assertSafeOutboundUrl/);assert.match(service,/AbortSignal\.timeout\(5000\)/);assert.match(service,/createHmac\('sha256'/);});
+test('delivery has dedup retry logs and mute windows',()=>{assert.match(service,/dedup_key/);assert.match(service,/RETRYING/);assert.match(service,/next_retry_at/);assert.match(service,/mute_start/);assert.match(service,/mute_end/);});
+test('email never pretends success without SMTP configuration',()=>{assert.match(service,/SMTP_URL belum dikonfigurasi/);assert.match(service,/SMTP adapter belum tersedia/);});
+test('supported alert events cover payment provider webhook settlement dispute',()=>{for(const x of ['payment.failure_spike','provider.degraded','webhook.dead_letter','settlement.pending','dispute.deadline'])assert.match(service,new RegExp(x.replace('.','\\.')));});

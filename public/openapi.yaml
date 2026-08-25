@@ -1,0 +1,102 @@
+openapi: 3.1.0
+info:
+  title: EvoPay Merchant API
+  version: 1.0.0
+  description: API pembayaran multi-merchant EvoPay.
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Local development
+security:
+  - bearerAuth: []
+paths:
+  /payments:
+    post:
+      summary: Buat pembayaran
+      operationId: createPayment
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreatePayment' }
+      responses:
+        '201':
+          description: Pembayaran dibuat
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /payments/{paymentId}:
+    get:
+      summary: Ambil status pembayaran
+      operationId: getPayment
+      parameters:
+        - $ref: '#/components/parameters/PaymentId'
+      responses:
+        '200':
+          description: Detail pembayaran
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /payments/{paymentId}/sync:
+    post:
+      summary: Sinkronkan status dengan provider
+      operationId: syncPayment
+      parameters:
+        - $ref: '#/components/parameters/PaymentId'
+      responses:
+        '200':
+          description: Status terbaru
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentResponse' }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer }
+  parameters:
+    PaymentId:
+      in: path
+      name: paymentId
+      required: true
+      schema: { type: string }
+  schemas:
+    CreatePayment:
+      type: object
+      required: [order_id, amount, payment_method]
+      properties:
+        order_id: { type: string, example: TOPUP-10001 }
+        amount: { type: integer, minimum: 1000, example: 15000 }
+        payment_method: { type: string, example: qris }
+        description: { type: string, example: Topup game }
+        redirect_url: { type: string, format: uri }
+        customer:
+          type: object
+          properties:
+            name: { type: string }
+            email: { type: string, format: email }
+            phone: { type: string }
+    Payment:
+      type: object
+      properties:
+        id: { type: string }
+        order_id: { type: string }
+        status: { type: string, enum: [PENDING, PAID, FAILED, EXPIRED] }
+        amount: { type: integer }
+        total_amount: { type: integer }
+        checkout_url: { type: [string, 'null'] }
+        expires_at: { type: [string, 'null'], format: date-time }
+    PaymentResponse:
+      type: object
+      properties:
+        data: { $ref: '#/components/schemas/Payment' }
+        duplicate: { type: boolean }
+  responses:
+    Unauthorized: { description: API key tidak valid atau tidak aktif }
+    ValidationError: { description: Request tidak valid }
+    NotFound: { description: Resource tidak ditemukan }

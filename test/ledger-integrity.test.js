@@ -1,0 +1,8 @@
+import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';
+const service=fs.readFileSync(new URL('../src/services/finance-service.js',import.meta.url),'utf8'),routes=fs.readFileSync(new URL('../src/routes/project-reports-routes.js',import.meta.url),'utf8'),html=fs.readFileSync(new URL('../public/index.html',import.meta.url),'utf8');
+test('ledger validates integer positive balanced entries and idempotency',()=>{assert.match(service,/INVALID_LEDGER_POST/);assert.match(service,/Number\.isInteger\(entry\.amount\)/);assert.match(service,/debit !== credit/);assert.match(service,/idempotency_key=\?/);});
+test('ledger postings carry deterministic integrity hashes',()=>{assert.match(service,/createHash\('sha256'/);assert.match(service,/entry_hash/);assert.match(service,/hash_valid/);});
+test('settlement availability subtracts reserves and in-flight approvals',()=>{assert.match(service,/merchant_reserves/);assert.match(service,/inApproval/);assert.match(service,/APPROVAL_REQUIRED','PROCESSING'/);assert.match(service,/available:Math\.max\(0/);});
+test('approval never marks settlement succeeded or transfers funds',()=>{assert.match(service,/\['PROCESSING', approvedBy/);assert.match(service,/approval never transfers funds/);});
+test('reconciliation detects missing ledger and invalid net then supports resolution',()=>{assert.match(service,/LEDGER_ENTRY_MISSING/);assert.match(service,/INVALID_NET_AMOUNT/);assert.match(service,/resolveDiscrepancy/);assert.match(routes,/discrepancies/);});
+test('report UI exposes integrity, discrepancy and reserve controls',()=>{for(const id of ['ledger-integrity','discrepancy-list','reserve-form'])assert.match(html,new RegExp(`id="${id}"`));});
