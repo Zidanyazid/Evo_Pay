@@ -46,12 +46,13 @@ export class TokopayProvider extends PaymentProvider {
     };
   }
 
-  async getPaymentStatus(reference) {
+  async getPaymentStatus(reference, context = {}) {
     if (!this.configured()) throw new Error('Tokopay belum dikonfigurasi.');
-    const signature = this.signature(reference);
-    const response = await fetch(`${this.baseUrl}/order?merchant_id=${encodeURIComponent(this.merchantId)}&reff_id=${encodeURIComponent(reference)}&signature=${signature}`, { signal: AbortSignal.timeout(15000) });
+    const url = new URL(`${this.baseUrl}/order`);
+    url.search = new URLSearchParams({ merchant: this.merchantId, secret: this.secret, ref_id: reference, nominal: String(context.amount || 1), metode: context.paymentMethod || 'QRIS' });
+    const response = await fetch(url, { signal: AbortSignal.timeout(15000) });
     const payload = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(payload.message || 'Gagal menyinkronkan status Tokopay.');
+    if (!response.ok || payload.status === false || payload.status === 0 || Number(payload.rc) >= 400 || payload.error_msg) throw new Error(payload.message || payload.error_msg || 'Gagal menyinkronkan status Tokopay.');
     const data = payload.data || payload;
     return { status: normalizeStatus(data.status || payload.status), providerTransactionId: data.reference || data.trx_id || null, raw: payload };
   }

@@ -38,3 +38,15 @@ import {ratePressure,reconciliationStale} from '../src/services/alert-service.js
 test('alert helpers use exact pressure and stale-work boundaries',()=>{assert.equal(ratePressure(8,10),true);assert.equal(ratePressure(7,10),false);assert.equal(reconciliationStale(null,0),false);assert.equal(reconciliationStale({finished_at:new Date(Date.now()).toISOString()},1),false);});
 
 test('Tokopay total never falls below base amount',()=>{assert.equal(totalAmount(10250,10000),10250);assert.equal(totalAmount(9999,10000),10000);assert.equal(totalAmount('bad',10000),10000);const payment=publicPayment({amount:10000,provider_fee:250,total_amount:10250});assert.deepEqual([payment.amount,payment.provider_fee,payment.total_amount],[10000,250,10250]);});
+
+test('Tokopay status query uses credential parameters and rejects provider errors', async()=>{
+  const provider=new TokopayProvider({merchantId:'m1',secret:'s1',baseUrl:'https://tokopay.test/v1'});
+  let seenUrl='';
+  const originalFetch=globalThis.fetch;
+  globalThis.fetch=async(url)=>{seenUrl=String(url); return new Response(JSON.stringify({status:0,message:'Required Merchant ID'}),{status:200});};
+  try { await assert.rejects(()=>provider.getPaymentStatus('EP123'), /Required Merchant ID/); }
+  finally { globalThis.fetch=originalFetch; }
+  assert.match(seenUrl,/merchant=m1/);
+  assert.match(seenUrl,/secret=s1/);
+  assert.match(seenUrl,/ref_id=EP123/);
+});
