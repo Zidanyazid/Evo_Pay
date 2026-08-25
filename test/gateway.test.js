@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { TokopayProvider } from '../src/providers/tokopay-provider.js';
 import { publicPayment } from '../src/services/payment-service.js';
+import { totalAmount } from '../src/providers/tokopay-provider.js';
 test('Tokopay accepts only a valid reference signature', () => { const provider = new TokopayProvider({ merchantId: 'merchant', secret: 'secret' }); const ref = 'reference-1'; const signature = crypto.createHash('md5').update(`merchant:secret:${ref}`).digest('hex'); assert.equal(provider.verifyWebhook({ reff_id: ref, signature }), true); assert.equal(provider.verifyWebhook({ reff_id: ref, signature: 'bad' }), false); });
 test('public payment never exposes Site API key or callback secret', () => { const data = publicPayment({ id: 'pay_1', site_id: 'site_1', order_id: 'order', provider_reference: 'ref', status: 'PENDING', payment_method: 'QRIS', amount: 1000, created_at: 'now', updated_at: 'now' }); assert.deepEqual(Object.keys(data).filter((key) => /key|secret/i.test(key)), []); });
 import { responsePreview, retryState } from '../src/services/webhook-service.js';
@@ -35,3 +36,5 @@ import fs from 'node:fs';
 test('recovery runbook includes safety-critical recovery sections', () => { const runbook = fs.readFileSync(new URL('../docs/RUNBOOK.md', import.meta.url), 'utf8'); for (const section of ['## Callback Site gagal', '## Tokopay lambat atau tidak tersedia', '## Database down', '## Backup dan restore database', '## Rotasi credential']) assert.equal(runbook.includes(section), true); assert.equal(runbook.includes('Jangan restore di atas database produksi aktif'), true); });
 import {ratePressure,reconciliationStale} from '../src/services/alert-service.js';
 test('alert helpers use exact pressure and stale-work boundaries',()=>{assert.equal(ratePressure(8,10),true);assert.equal(ratePressure(7,10),false);assert.equal(reconciliationStale(null,0),false);assert.equal(reconciliationStale({finished_at:new Date(Date.now()).toISOString()},1),false);});
+
+test('Tokopay total never falls below base amount',()=>{assert.equal(totalAmount(10250,10000),10250);assert.equal(totalAmount(9999,10000),10000);assert.equal(totalAmount('bad',10000),10000);const payment=publicPayment({amount:10000,provider_fee:250,total_amount:10250});assert.deepEqual([payment.amount,payment.provider_fee,payment.total_amount],[10000,250,10250]);});
