@@ -32,3 +32,6 @@ coverage/
 # Local exports and recordings
 Database/
 Record/
+
+# Hosting-managed ACME challenges
+.well-known/acme-challenge/
